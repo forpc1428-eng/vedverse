@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>
+  // Capacitor 7's native bridge exposes plugins on Capacitor.Plugins but no registerPlugin() without a bundler.
+  // Without this, every native call (UPI apps, pay, scanner, widgets, haptics, back button, deep links) silently failed.
+  (function () {
+    var C = window.Capacitor;
+    if (C && typeof C.registerPlugin !== 'function') {
+      C.registerPlugin = function (name) {
+        var p = C.Plugins && C.Plugins[name];
+        if (!p) throw new Error(name + ' plugin is not available');
+        return p;
+      };
+    }
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#020307">
+<meta name="color-scheme" content="dark">
+<title>Vedverse</title>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/studio.css">
+<link rel="stylesheet" href="css/perf.css">
+<link rel="modulepreload" href="js/app.js">
+<link rel="modulepreload" href="js/universe.js">
+<link rel="modulepreload" href="vendor/three.module.js">
+<link rel="modulepreload" href="vendor/three.core.js">
+<link rel="preload" as="fetch" href="assets/space/sky-4k.webp?v=4">
+</head>
+<body>
+<!-- liquid-glass refraction filters -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="liquid" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="7" result="n"/>
+    <feGaussianBlur in="n" stdDeviation="2" result="nb"/>
+    <feDisplacementMap in="SourceGraphic" in2="nb" scale="42" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="liquid-soft" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="1" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="18" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="7" result="b"/><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter>
+</svg>
+
+<canvas id="gl"></canvas>
+<div id="poster" aria-hidden="true"></div>
+<div id="bg-fallback"></div>
+<div id="grain"></div>
+
+<div id="app" class="app">
+  <header class="topbar">
+    <button class="brand press" id="brand" aria-label="Vedverse"><span id="brandLogo"></span><span class="brand-word">Ved<b>verse</b></span></button>
+    <div class="top-actions">
+      <button class="icon-btn glass press" id="privacyBtn" aria-label="Hide amounts"></button>
+      <button class="icon-btn glass press" id="editBtn" aria-label="Customize"></button>
+    </div>
+  </header>
+  <main id="view">
+    <section class="screen" id="s-home" data-screen="home"></section>
+    <section class="screen" id="s-history" data-screen="history"></section>
+    <section class="screen" id="s-stats" data-screen="stats"></section>
+    <section class="screen" id="s-settings" data-screen="settings"></section>
+  </main>
+  <nav class="dock glass" id="dock">
+    <div class="dock-blob" id="dockBlob"></div>
+    <button class="dock-item press" data-go="home"><i></i><span>Home</span></button>
+    <button class="dock-item press" data-go="history"><i></i><span>History</span></button>
+    <button class="dock-scan press" id="dockScan" aria-label="Scan and pay"><span class="scan-orb"><i></i></span></button>
+    <button class="dock-item press" data-go="stats"><i></i><span>Insights</span></button>
+    <button class="dock-item press" data-go="settings"><i></i><span>Settings</span></button>
+  </nav>
+</div>
+
+<div id="labels"></div>
+
+<div id="scanner" class="scanner" hidden>
+  <video id="scanVideo" playsinline muted></video>
+  <canvas id="scanFreeze"></canvas>
+  <div class="scan-shade"></div>
+  <div class="scan-sweep"></div>
+  <svg class="scan-quad" id="scanQuad" aria-hidden="true"><polygon points="0,0 0,0 0,0 0,0"/></svg>
+  <div class="scan-ret" id="scanRet"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
+  <div class="scan-focus" id="scanFocus"></div>
+  <div class="scan-top">
+    <button class="icon-btn glass press" id="scanClose" aria-label="Close"></button>
+    <div class="scan-badge glass" id="scanBadge">Starting camera…</div>
+    <button class="scan-flash glass press" id="scanTorch" data-mode="auto" aria-label="Flash mode"><i></i><span>Auto</span></button>
+  </div>
+  <div class="scan-hint" id="scanHint">Point anywhere at a UPI or Bharat QR</div>
+  <div class="scan-actions">
+    <button class="scan-act glass press" id="scanGallery"><i></i><span>Gallery</span></button>
+    <button class="scan-act glass press" id="scanPaste"><i></i><span>Paste</span></button>
+    <button class="scan-act glass press" id="scanManual"><i></i><span>UPI ID</span></button>
+  </div>
+  <input type="file" id="galleryInput" accept="image/*" hidden>
+</div>
+
+<div id="sheets"></div>
+<div id="toasts"></div>
+<div id="intro" class="intro" hidden>
+  <div class="intro-logo" id="introLogo"></div>
+  <div class="intro-word"><span>V</span><span>e</span><span>d</span><span>v</span><span>e</span><span>r</span><span>s</span><span>e</span></div>
+  <div class="intro-tag">your money, alive</div>
+</div>
+<div id="lock" class="lock" hidden></div>
+
+<script src="vendor/jsQR.js" defer></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

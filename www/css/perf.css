@@ -1,0 +1,126 @@
+/* ==========================================================================
+   Performance layer — same look, a fraction of the GPU work.
+   Measured on Android WebView: live backdrop blur on every card was the #1 cost (17 → 47+ fps without it).
+   Big surfaces now use a pre-baked "frosted" fill (theme-tinted, layered highlights + fine grain) instead of
+   re-blurring the moving universe every frame; small chrome keeps a light real blur.
+   ========================================================================== */
+:root{
+  --frost:linear-gradient(140deg,rgba(var(--g-rgb,11,16,32),calc(var(--ga,.6)*.95)),rgba(var(--g-rgb,11,16,32),calc(var(--ga,.6)*.7)) 45%,rgba(var(--g-rgb,11,16,32),calc(var(--ga,.6)*.85)));
+  --sheen:linear-gradient(140deg,rgba(255,255,255,calc(var(--ga,.6)*.2)),rgba(255,255,255,.02) 45%,rgba(255,255,255,calc(var(--ga,.6)*.11)));
+  --frost-grain:url("data:image/png;base64,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");
+}
+.glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--sheen),var(--frost)}
+html.grain-on .glass{background:var(--frost-grain),var(--sheen),var(--frost)}
+/* small chrome keeps real (light) blur: dock, round buttons, chips, scanner controls */
+.dock.glass,.icon-btn.glass,.scan-badge.glass,.scan-flash.glass,.scan-zooms.glass,.scan-act.glass,.lock-chip{-webkit-backdrop-filter:blur(10px) saturate(140%)!important;backdrop-filter:blur(10px) saturate(140%)!important;background:var(--g-bg)}
+/* sheets: dim instead of blurring the whole screen */
+.sheet-bg{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(2,3,8,.62)!important}
+.sheet.glass{background:var(--frost-grain),linear-gradient(180deg,color-mix(in srgb,var(--bg1) 88%,#fff 4%),color-mix(in srgb,var(--bg0) 92%,#fff 2%))}
+.processing{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(2,3,8,.72)!important}
+/* off-screen work: tab screens that aren't shown never paint; long lists skip offscreen rows */
+.screen:not(.active){content-visibility:hidden}
+.tx{content-visibility:auto;contain-intrinsic-size:auto 68px}
+/* keep the 3D canvas and the UI on separate compositor layers */
+#gl{will-change:transform;transform:translateZ(0)}
+#app{isolation:isolate}
+.screen{filter:none!important}
+
+/* scanner: controls float over the live camera — no backdrop blur there (it can't blur the camera anyway, it only costs) */
+.scanner .glass,.scanner .icon-btn.glass,.scanner .scan-badge.glass,.scanner .scan-flash.glass,.scanner .scan-zooms.glass,.scanner .scan-act.glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(10,12,20,.55)!important}
+.scanner .glass::before,.scanner .glass::after{display:none}
+/* instant start: a pre-rendered frame of the exact home scene shows at once, then cross-fades into the live 3D */
+#poster{position:fixed;inset:0;z-index:0;pointer-events:none;background:#020307 url(../assets/space/poster.jpg) center top/cover no-repeat;transition:opacity .8s ease}
+html.gl-ready #poster{opacity:0;visibility:hidden;transition:opacity .8s ease,visibility 0s .8s}
+html.no3d #poster{display:none}
+/* the two always-running micro animations repaint only their own tiny layer */
+.brand-word b,.scan-orb .ic{will-change:transform;contain:paint}
+
+/* ---------- layering: popups always sit above the scanner / pay screens ---------- */
+.sheet-wrap{z-index:60!important}
+.processing{z-index:62!important}
+.fx-canvas{z-index:64}
+/* a second tap on a button whose popup is already open nudges it instead of opening another */
+.sheet.nudge{animation:sheetNudge .32s var(--spring)}
+@keyframes sheetNudge{30%{transform:translateY(-10px)}60%{transform:translateY(3px)}}
+.field-with-btn{display:flex;gap:8px;align-items:stretch}
+.field-with-btn .field{flex:1;min-width:0}
+.field-with-btn .btn{flex:none;padding:0 14px}
+
+/* ================= settings: categories, drill-down pages, search ================= */
+.set-search{margin:4px 0 14px}
+.set-cats{display:grid;gap:10px}
+.set-cat{display:flex;align-items:center;gap:14px;padding:14px 14px;border-radius:20px;text-align:left;width:100%}
+.set-ic{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,color-mix(in srgb,var(--a1) 35%,transparent),color-mix(in srgb,var(--a2) 18%,transparent));box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.set-ic .ic{width:20px;height:20px}
+.set-ct{flex:1;min-width:0}.set-ct b{display:block;font-size:15px}.set-ct small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.set-cat .chev{opacity:.5;width:18px;height:18px}
+.set-top{display:flex;align-items:center;gap:12px;margin:4px 0 14px}.set-top h3{font-size:20px}
+.set-top .icon-btn{width:42px;height:42px}
+.set-p{margin:-6px 2px 12px}
+.set-sub{padding:16px 16px 6px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.set-color{width:44px;height:32px;border:0;border-radius:10px;background:none;padding:0;flex:none}
+.font-grid{display:flex;flex-wrap:wrap;gap:8px}
+.font-chip{padding:9px 13px;border-radius:14px;font-size:14px;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.font-chip.on{background:var(--a1);color:#120c03}
+/* ================= home ================= */
+.hero-greet{font-size:13.5px;font-weight:600;color:var(--a2);margin-bottom:6px;letter-spacing:.01em;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.widget.size-t{grid-row:span 2}
+.w-sz{position:absolute;z-index:9;top:-8px;left:-8px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--a2);color:#04121a;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.w-sz .ic{width:15px;height:15px}
+/* ================= pay ================= */
+.amt-expr{text-align:center;font-size:13px;font-weight:600;color:var(--a2);min-height:0;font-variant-numeric:tabular-nums}
+.amt-expr:empty{display:none}
+.recent-row{margin-bottom:4px}
+.recent-chip{display:flex;align-items:center;gap:7px;padding:6px 12px 6px 6px}
+.recent-chip i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:800;color:#120c03;background:linear-gradient(135deg,var(--a2),var(--a1))}
+.calc-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
+.calc-k{height:clamp(32px,4.4vh,40px);border-radius:14px;font-size:20px;font-weight:600;color:var(--a2);background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.calc-k[data-op="="]{color:#120c03;background:var(--a2)}
+/* ================= receipts, theme builder, timeline, history ================= */
+.rc-styles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rc-sty{display:flex;flex-direction:column;gap:6px;align-items:center;font-size:11.5px;color:var(--muted)}
+.rc-thumb{width:100%;aspect-ratio:1080/1620;border-radius:12px;background:#111 center/cover no-repeat;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.rc-sty.on .rc-thumb{outline:2.5px solid var(--a1);outline-offset:2px}
+.tb-cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.tb-col{display:flex;flex-direction:column;gap:6px;font-size:11.5px;color:var(--muted)}
+.tb-col input{width:100%;height:40px;border:0;border-radius:12px;background:none;padding:0}
+.hist-tools{display:flex;gap:8px;align-items:center}.hist-tools .search{flex:1;min-width:0}.hist-tools .icon-btn{flex:none;width:46px;height:46px}
+.hist-tools .icon-btn.act{color:var(--a1);box-shadow:inset 0 0 0 1.5px var(--a1)}
+.tl{padding:4px 0}
+.tl-row{display:flex;align-items:center;gap:12px;padding:11px 14px;position:relative}
+.tl-row+.tl-row{border-top:1px solid rgba(255,255,255,.05)}
+.tl-ic{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.07)}.tl-ic .ic{width:17px;height:17px}
+.tl-row .grow{min-width:0;flex:1}.tl-row b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tl-row small{font-size:11.5px;color:var(--muted)}
+.tl-acc{opacity:.6}
+.inc-card{display:flex;align-items:center;gap:16px;padding:14px 16px;margin-bottom:12px}
+.inc-card>div{flex:1}.inc-card small{display:block;font-size:11.5px;color:var(--muted)}.inc-card b{font-size:20px}
+.chip.dim{opacity:.4}.chip.sel{outline:2px solid var(--a2);outline-offset:1px}
+/* ================= text size, bold, animation speed ================= */
+#app,#sheets,.pay,.receipt-wrap,#toasts{zoom:var(--fs,1)}
+html.bold body{font-weight:500}html.bold b,html.bold strong,html.bold h3,html.bold h4,html.bold .num{font-weight:800}
+html.anim-calm .screen,html.anim-calm .sheet,html.anim-calm .pay,html.anim-calm .toast,html.anim-calm .widget,html.anim-calm .tx{transition-duration:.7s!important;animation-duration:.9s!important}
+html.anim-snappy .screen,html.anim-snappy .sheet,html.anim-snappy .pay,html.anim-snappy .toast,html.anim-snappy .widget,html.anim-snappy .tx{transition-duration:.16s!important;animation-duration:.24s!important}
+html.anim-none .screen,html.anim-none .sheet,html.anim-none .pay,html.anim-none .toast,html.anim-none .widget,html.anim-none .tx,html.anim-none .receipt-wrap{transition:none!important;animation:none!important}
+/* notifications: permission ask + Notification Studio */
+.np-hero{width:76px;height:76px;margin:4px auto 8px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,var(--a2),var(--a1) 60%,transparent 72%);box-shadow:0 0 40px -6px var(--a1)}
+.np-hero svg{width:34px;height:34px;color:#120c03}
+.np-list{display:grid;gap:8px;margin:0 6px}
+.np-list div{padding:11px 14px;border-radius:14px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);font-size:14px}
+.ns-list{padding:4px 0}
+.ns-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06)}
+.ns-item:last-child{border-bottom:0}
+.ns-item small{display:block;opacity:.6;font-size:12px;margin-top:2px}
+.ns-em{font-size:24px;width:34px;text-align:center}
+.ns-form{padding:14px;border-radius:20px}
+.ns-ems{display:flex;flex-wrap:wrap;gap:6px}
+.ns-e{width:40px;height:40px;border-radius:12px;font-size:20px;background:rgba(255,255,255,.06)}
+.ns-e.on{background:var(--a1);box-shadow:0 0 18px -4px var(--a1)}
+.ns-form .chip.on{background:var(--a1);color:#120c03}
+/* alignment fixes */
+.seg button{min-width:0;padding-left:4px;padding-right:4px;white-space:nowrap}
+.seg.many button{font-size:12px;letter-spacing:0}
+.scan-top{display:grid!important;grid-template-columns:1fr auto 1fr}
+.scan-top #scanClose{justify-self:start}
+.scan-top .scan-flash{justify-self:end}
+.scan-top .scan-badge{justify-self:center;max-width:52vw;overflow:hidden;text-overflow:ellipsis}
+.scan-hint{padding:0 18px}

@@ -1,0 +1,29 @@
+# dependencies & generated native project
+node_modules/
+/android/
+/ios/
+
+# build output (the APK lives in GitHub Releases)
+*.apk
+*.aab
+
+# signing key + passwords: NEVER commit
+keystore/
+*.jks
+*.keystore
+signing.properties
+local.properties
+.env*
+
+# local previews / tooling
+icon-previews*.png
+name-previews.txt
+.claude/
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+
+# optional cloud-build workflow (kept local)
+.github/

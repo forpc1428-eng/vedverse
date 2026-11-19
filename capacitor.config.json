@@ -1,0 +1,29 @@
+{
+  "appId": "com.vedant.vedverse",
+  "appName": "Vedverse",
+  "webDir": "www",
+  "backgroundColor": "#020307",
+  "android": {
+    "backgroundColor": "#020307",
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "backgroundColor": "#020307",
+    "contentInset": "never"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 500,
+      "launchAutoHide": true,
+      "backgroundColor": "#020307",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DARK",
+      "backgroundColor": "#00000000"
+    }
+  }
+}

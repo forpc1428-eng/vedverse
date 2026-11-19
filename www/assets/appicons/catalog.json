@@ -1,0 +1,509 @@
+{
+ "icons": [
+  {
+   "id": 0,
+   "name": "Classic V",
+   "view": "Logo"
+  },
+  {
+   "id": 1,
+   "name": "Gargantua",
+   "view": "Edge"
+  },
+  {
+   "id": 2,
+   "name": "Gargantua",
+   "view": "Tilt"
+  },
+  {
+   "id": 3,
+   "name": "Gargantua",
+   "view": "Halo"
+  },
+  {
+   "id": 4,
+   "name": "Solar Gold",
+   "view": "Edge"
+  },
+  {
+   "id": 5,
+   "name": "Solar Gold",
+   "view": "Tilt"
+  },
+  {
+   "id": 6,
+   "name": "Solar Gold",
+   "view": "Halo"
+  },
+  {
+   "id": 7,
+   "name": "Inferno",
+   "view": "Edge"
+  },
+  {
+   "id": 8,
+   "name": "Inferno",
+   "view": "Tilt"
+  },
+  {
+   "id": 9,
+   "name": "Inferno",
+   "view": "Halo"
+  },
+  {
+   "id": 10,
+   "name": "Crimson",
+   "view": "Edge"
+  },
+  {
+   "id": 11,
+   "name": "Crimson",
+   "view": "Tilt"
+  },
+  {
+   "id": 12,
+   "name": "Crimson",
+   "view": "Halo"
+  },
+  {
+   "id": 13,
+   "name": "Rose Gold",
+   "view": "Edge"
+  },
+  {
+   "id": 14,
+   "name": "Rose Gold",
+   "view": "Tilt"
+  },
+  {
+   "id": 15,
+   "name": "Rose Gold",
+   "view": "Halo"
+  },
+  {
+   "id": 16,
+   "name": "Magenta",
+   "view": "Edge"
+  },
+  {
+   "id": 17,
+   "name": "Magenta",
+   "view": "Tilt"
+  },
+  {
+   "id": 18,
+   "name": "Magenta",
+   "view": "Halo"
+  },
+  {
+   "id": 19,
+   "name": "Violet",
+   "view": "Edge"
+  },
+  {
+   "id": 20,
+   "name": "Violet",
+   "view": "Tilt"
+  },
+  {
+   "id": 21,
+   "name": "Violet",
+   "view": "Halo"
+  },
+  {
+   "id": 22,
+   "name": "Indigo",
+   "view": "Edge"
+  },
+  {
+   "id": 23,
+   "name": "Indigo",
+   "view": "Tilt"
+  },
+  {
+   "id": 24,
+   "name": "Indigo",
+   "view": "Halo"
+  },
+  {
+   "id": 25,
+   "name": "Glacier",
+   "view": "Edge"
+  },
+  {
+   "id": 26,
+   "name": "Glacier",
+   "view": "Tilt"
+  },
+  {
+   "id": 27,
+   "name": "Glacier",
+   "view": "Halo"
+  },
+  {
+   "id": 28,
+   "name": "Cosmic Teal",
+   "view": "Edge"
+  },
+  {
+   "id": 29,
+   "name": "Cosmic Teal",
+   "view": "Tilt"
+  },
+  {
+   "id": 30,
+   "name": "Cosmic Teal",
+   "view": "Halo"
+  },
+  {
+   "id": 31,
+   "name": "Emerald",
+   "view": "Edge"
+  },
+  {
+   "id": 32,
+   "name": "Emerald",
+   "view": "Tilt"
+  },
+  {
+   "id": 33,
+   "name": "Emerald",
+   "view": "Halo"
+  },
+  {
+   "id": 34,
+   "name": "Eclipse Silver",
+   "view": "Edge"
+  },
+  {
+   "id": 35,
+   "name": "Eclipse Silver",
+   "view": "Tilt"
+  },
+  {
+   "id": 36,
+   "name": "Eclipse Silver",
+   "view": "Halo"
+  },
+  {
+   "id": 37,
+   "name": "Pulsar",
+   "view": "Cosmic"
+  },
+  {
+   "id": 38,
+   "name": "Spiral Galaxy",
+   "view": "Cosmic"
+  },
+  {
+   "id": 39,
+   "name": "Ringed Planet",
+   "view": "Cosmic"
+  },
+  {
+   "id": 40,
+   "name": "Comet",
+   "view": "Cosmic"
+  },
+  {
+   "id": 41,
+   "name": "Supernova",
+   "view": "Cosmic"
+  },
+  {
+   "id": 42,
+   "name": "Wormhole",
+   "view": "Cosmic"
+  },
+  {
+   "id": 43,
+   "name": "Binary Stars",
+   "view": "Cosmic"
+  },
+  {
+   "id": 44,
+   "name": "Solar Eclipse",
+   "view": "Cosmic"
+  },
+  {
+   "id": 45,
+   "name": "Crescent Moon",
+   "view": "Cosmic"
+  },
+  {
+   "id": 46,
+   "name": "Quasar",
+   "view": "Cosmic"
+  },
+  {
+   "id": 47,
+   "name": "Nebula",
+   "view": "Cosmic"
+  },
+  {
+   "id": 48,
+   "name": "Aurora Planet",
+   "view": "Cosmic"
+  },
+  {
+   "id": 49,
+   "name": "Astronaut",
+   "view": "Cosmic"
+  },
+  {
+   "id": 50,
+   "name": "Rocket",
+   "view": "Cosmic"
+  },
+  {
+   "id": 51,
+   "name": "Neon V",
+   "view": "Monogram"
+  },
+  {
+   "id": 52,
+   "name": "Liquid Glass V",
+   "view": "Monogram"
+  },
+  {
+   "id": 53,
+   "name": "Gold Foil V",
+   "view": "Monogram"
+  },
+  {
+   "id": 54,
+   "name": "Chrome V",
+   "view": "Monogram"
+  },
+  {
+   "id": 55,
+   "name": "Origami V",
+   "view": "Monogram"
+  },
+  {
+   "id": 56,
+   "name": "Pixel V",
+   "view": "Monogram"
+  },
+  {
+   "id": 57,
+   "name": "Constellation V",
+   "view": "Monogram"
+  },
+  {
+   "id": 58,
+   "name": "Brush V",
+   "view": "Monogram"
+  },
+  {
+   "id": 59,
+   "name": "Stone V",
+   "view": "Monogram"
+  },
+  {
+   "id": 60,
+   "name": "Holographic V",
+   "view": "Monogram"
+  },
+  {
+   "id": 61,
+   "name": "Rupee Orb",
+   "view": "Money"
+  },
+  {
+   "id": 62,
+   "name": "Coin Stack",
+   "view": "Money"
+  },
+  {
+   "id": 63,
+   "name": "Wallet",
+   "view": "Money"
+  },
+  {
+   "id": 64,
+   "name": "QR Glyph",
+   "view": "Money"
+  },
+  {
+   "id": 65,
+   "name": "Card",
+   "view": "Money"
+  },
+  {
+   "id": 66,
+   "name": "Coin Planet",
+   "view": "Money"
+  },
+  {
+   "id": 67,
+   "name": "Vault",
+   "view": "Money"
+  },
+  {
+   "id": 68,
+   "name": "Receipt",
+   "view": "Money"
+  },
+  {
+   "id": 69,
+   "name": "Gradient Orb",
+   "view": "Minimal"
+  },
+  {
+   "id": 70,
+   "name": "Line Black Hole",
+   "view": "Minimal"
+  },
+  {
+   "id": 71,
+   "name": "Geometric",
+   "view": "Minimal"
+  },
+  {
+   "id": 72,
+   "name": "Retro Sunset",
+   "view": "Minimal"
+  },
+  {
+   "id": 73,
+   "name": "₹ Glyph",
+   "view": "Minimal"
+  },
+  {
+   "id": 74,
+   "name": "Dot Matrix V",
+   "view": "Minimal"
+  },
+  {
+   "id": 75,
+   "name": "Duotone Wave",
+   "view": "Minimal"
+  },
+  {
+   "id": 76,
+   "name": "Paper Cut",
+   "view": "Minimal"
+  }
+ ],
+ "names": [
+  "Vedverse",
+  "Vedant",
+  "Ved",
+  "VPay",
+  "Ved Pay",
+  "Vedant Pay",
+  "Vedverse Pay",
+  "Horizon",
+  "Event Horizon",
+  "Singularity",
+  "Gargantua",
+  "Black Hole",
+  "Orbit",
+  "Quasar",
+  "Pulsar",
+  "Eclipse",
+  "Nebula",
+  "Cosmos",
+  "Void",
+  "Nova",
+  "Stardust",
+  "Photon",
+  "Halo",
+  "Zenith",
+  "Vortex",
+  "Warp",
+  "Infinity",
+  "Spacetime",
+  "Galaxy Pay",
+  "Astro Pay",
+  "Orbit Pay",
+  "Pay",
+  "Scan & Pay",
+  "UPI",
+  "Wallet",
+  "My Wallet",
+  "Money",
+  "Paisa",
+  "Kharcha",
+  "Hisaab",
+  "Budget",
+  "My Money",
+  "𝐕𝐞𝐝𝐚𝐧𝐭",
+  "𝓥𝓮𝓭𝓪𝓷𝓽",
+  "𝕍𝕖𝕕𝕒𝕟𝕥",
+  "𝔙𝔢𝔡𝔞𝔫𝔱",
+  "𝗩𝗲𝗱𝗮𝗻𝘁",
+  "𝚅𝚎𝚍𝚊𝚗𝚝",
+  "𝘝𝘦𝘥𝘢𝘯𝘵",
+  "ᴠᴇᴅᴀɴᴛ",
+  "Ⓥⓔⓓⓐⓝⓣ",
+  "𝐕𝐞𝐝𝐯𝐞𝐫𝐬𝐞",
+  "𝓥𝓮𝓭𝓿𝓮𝓻𝓼𝓮",
+  "𝕍𝕖𝕕𝕧𝕖𝕣𝕤𝕖",
+  "𝔙𝔢𝔡𝔳𝔢𝔯𝔰𝔢",
+  "𝗩𝗲𝗱𝘃𝗲𝗿𝘀𝗲",
+  "𝚅𝚎𝚍𝚟𝚎𝚛𝚜𝚎",
+  "𝘝𝘦𝘥𝘷𝘦𝘳𝘴𝘦",
+  "ᴠᴇᴅᴠᴇʀsᴇ",
+  "Ⓥⓔⓓⓥⓔⓡⓢⓔ",
+  "V E D A N T",
+  "✦ Vedant ✦",
+  "Vedant ✨",
+  "⟡ Vedverse",
+  "Antariksh",
+  "Brahmand",
+  "Akash",
+  "Dhruv",
+  "Tara",
+  "Surya",
+  "Chandra",
+  "Kosh",
+  "Tijori",
+  "Bachat",
+  "वेदांत",
+  "वेदवर्स",
+  "पे",
+  "ｖｅｄａｎｔ",
+  "ᵛᵉᵈᵃⁿᵗ",
+  "ʇuɐpǝʌ",
+  "V̶e̶d̶a̶n̶t̶",
+  "Ⓥⓔⓓ",
+  "🌌 Ved",
+  "⚫ Pay",
+  "🪐 Orbit",
+  "✨ Vedant",
+  "💫 Vedverse",
+  "🚀 Pay",
+  "Ved.",
+  "V.",
+  "VV",
+  "Vedz",
+  "Calculator",
+  "Notes",
+  "Clock",
+  "Pocket",
+  "Paywave",
+  "Starpay",
+  "Nebula Pay",
+  "Moneyverse"
+ ],
+ "default": {
+  "icon": 0,
+  "name": 0
+ },
+ "launcher": [
+  0,
+  1,
+  2,
+  3,
+  7,
+  9,
+  34,
+  42,
+  43,
+  44,
+  61,
+  74
+ ]
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="scan" android:enabled="true" android:icon="@drawable/vv_ic_scan" android:shortcutShortLabel="@string/vv_sc_scan" android:shortcutLongLabel="@string/vv_sc_scan_long">
+        <intent android:action="android.intent.action.VIEW" android:data="vedverse://scan" android:targetPackage="com.vedant.vedverse" android:targetClass="com.vedant.vedverse.MainActivity"/>
+    </shortcut>
+    <shortcut android:shortcutId="history" android:enabled="true" android:icon="@drawable/vv_ic_scan" android:shortcutShortLabel="@string/vv_sc_hist" android:shortcutLongLabel="@string/vv_sc_hist_long">
+        <intent android:action="android.intent.action.VIEW" android:data="vedverse://history" android:targetPackage="com.vedant.vedverse" android:targetClass="com.vedant.vedverse.MainActivity"/>
+    </shortcut>
+</shortcuts>

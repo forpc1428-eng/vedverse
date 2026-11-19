@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vv_sc_scan">Scan &amp; Pay</string>
+    <string name="vv_sc_scan_long">Scan any UPI QR instantly</string>
+    <string name="vv_sc_hist">History</string>
+    <string name="vv_sc_hist_long">Your payment history</string>
+    <string name="vv_w_budget">Budget used this month</string>
+    <string name="vv_w_today">Spent today</string>
+    <string name="vv_w_safe">Safe to spend per day</string>
+    <string name="vv_w_last">Your last payment</string>
+    <string name="vv_w_scan">One-tap QR scanner</string>
+    <string name="vv_w_favs">Pay favourites in one tap</string>
+    <style name="VvFav">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/vv_pill</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:visibility">gone</item>
+    </style>
+</resources>

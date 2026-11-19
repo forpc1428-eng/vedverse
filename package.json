@@ -1,0 +1,28 @@
+{
+  "name": "vedverse",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Vedverse — a living, 3D, liquid-glass UPI payment companion",
+  "type": "module",
+  "scripts": {
+    "serve": "npx http-server www -p 8080 -c-1",
+    "android:init": "npx cap add android && node scripts/patch-android.mjs && npx @capacitor/assets generate --android --iconBackgroundColor '#020307' --iconBackgroundColorDark '#020307' --splashBackgroundColor '#020307' --splashBackgroundColorDark '#020307' && npx cap sync android",
+    "android:apk": "cd android && ./gradlew assembleRelease",
+    "build:apk": "bash build-apk.sh"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/filesystem": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/share": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.0.0"
+  }
+}
