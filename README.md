@@ -72,7 +72,8 @@ Scan any UPI QR in milliseconds, pay with the app you like, and watch your unive
 - Receipts in **22 universe styles**, shareable as images.
 
 ### 📊 Track everything
-- **Budget tracker mode** (big switch at the top of Settings): Home becomes a budget dashboard. Add cash, UPI or card expenses in one tap, set **category limits**, and see the month overview, forecast, savings goal and weekly chart.
+- **Zero-lag black hole**: rendered once at full quality and played as a video loop (Live 3D still available).
+- **Budget tracker mode** (big switch at the top of Settings): quick expenses, recurring expenses, spending calendar, movable widgets, and Home becomes a budget dashboard. Add cash, UPI or card expenses in one tap, set **category limits**, and see the month overview, forecast, savings goal and weekly chart.
 - History with search and filters, a **timeline** of every scan and payment (with optional precise location), and a 3D **sky** view of your payees.
 - **Insights**: spending rhythm, categories, forecast, money in vs out, and *Sound of your month*.
 - Bills and reminders, split bills, a receive QR, a savings goal, and income tracking.

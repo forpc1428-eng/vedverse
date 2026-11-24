@@ -274,7 +274,7 @@ export async function makeStatement(from, to) {
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
     g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
     const hd = g.createLinearGradient(0, 0, W, 0); hd.addColorStop(0, '#05070f'); hd.addColorStop(1, '#1a2240'); g.fillStyle = hd; g.fillRect(0, 0, W, p === 0 ? 300 : 140);
-    g.fillStyle = '#f2a144'; g.font = `800 46px ${fd}`; g.fillText('Vedverse', 70, 84);
+    g.fillStyle = '#f2a144'; g.font = `800 46px ${fd}`; g.fillText(store.s.idName || 'Vedverse', 70, 84);
     g.fillStyle = '#dfe6ff'; g.font = `500 26px ${fd}`; g.fillText(`Statement · ${new Date(from).toLocaleDateString('en-IN')} – ${new Date(to).toLocaleDateString('en-IN')}`, 70, 124);
     g.textAlign = 'right'; g.fillText(`${store.s.name || ''} · page ${p + 1}/${chunks.length}`, W - 70, 84); g.textAlign = 'left';
     let y = 180;

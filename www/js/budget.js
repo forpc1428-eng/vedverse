@@ -5,6 +5,7 @@ import { icon } from './icons.js';
 import { ring, bars } from './widgets.js';
 import { greeting, monthIncome } from './extras.js';
 import { dueList } from './tools.js';
+import { quickList, hasUndo, recurringList, calendarHTML, lastMonthCompare } from './budgetx.js';
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const $ = (s, el = document) => el.querySelector(s);
@@ -25,7 +26,7 @@ export function modePickerHTML() {
 }
 
 /* ================================================================== home (budget mode) */
-export function budgetHomeHTML(txRow) {
+export function budgetHomeHTML(txRow, widgetsHTML = '') {
   const s = stats(), st = store.s;
   const budget = +st.monthlyBudget || 0;
   const left = Math.max(0, budget - s.month);
@@ -70,6 +71,7 @@ export function budgetHomeHTML(txRow) {
       <button class="bt-q glass press" data-act="bt-income">${icon('download')}<span>Income</span></button>
       <button class="bt-q glass press" data-act="scan">${icon('scan')}<span>Scan &amp; pay</span></button>
     </div>
+    <div class="bt-qk">${quickList().map(q => `<button class="bt-qchip glass press" data-act="bt-q:${q.id}"><span>${esc(q.emoji)}</span><b>${esc(q.label)}</b><small class="num">${MF(q.am)}</small></button>`).join('')}${hasUndo() ? `<button class="bt-qchip glass press undo" data-act="bt-undo">${icon('refresh')}<b>Undo</b></button>` : ''}<button class="bt-qchip glass press" data-act="bt-qedit">${icon('edit')}<b>Edit</b></button></div>
 
     <div class="bt-over glass">
       <div class="bt-ring">${ring(Math.min(1, pct), 92, 9, pct > 1 ? 'var(--bad)' : pct > 0.8 ? 'var(--warn)' : 'var(--a2)', 'rgba(255,255,255,.08)', 'btr')}<div class="bt-ring-t"><b class="num">${Math.round(pct * 100)}%</b><small>used</small></div></div>
@@ -78,6 +80,7 @@ export function budgetHomeHTML(txRow) {
         <div><small>Money in</small><b class="num good">${M(inc)}</b></div>
         <div><small>Net</small><b class="num ${inc - s.month < 0 ? 'bad' : 'good'}">${money(inc - s.month)}</b></div>
         <div><small>Month forecast</small><b class="num ${budget && s.forecast > budget ? 'bad' : ''}">${M(Math.round(s.forecast))}</b></div>
+        ${lastMonthCompare() ? `<div style="grid-column:1/-1">${lastMonthCompare()}</div>` : ''}
       </div>
     </div>
 
@@ -86,6 +89,13 @@ export function budgetHomeHTML(txRow) {
 
     <div class="section-h"><h3>Last 7 days</h3><button data-act="go:stats">${icon('stats')} Insights</button></div>
     <div class="bt-week glass">${bars(wk.map(d => d.v), 86, wk.map(d => ['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(d.ts).getDay()]))}<div class="bt-week-f"><span>Avg/day <b class="num">${M(Math.round(avgDay))}</b></span><span>Week <b class="num">${M(s.week)}</b></span></div></div>
+
+    <div class="section-h"><h3>Spending calendar</h3><button data-act="go:history">${icon('calendar')} Days</button></div>
+    <div class="bt-week glass">${calendarHTML()}</div>
+
+    <div class="section-h"><h3>Recurring</h3><button data-act="bt-rec">${icon('edit')} Manage</button></div>
+    ${recurringList().length ? `<div class="list glass">${recurringList().map(r => { const c = store.cat(r.cat); const ym = new Date().getFullYear() * 100 + new Date().getMonth(); return `<div class="tx" data-act="bt-rec"><div class="av" style="--c:${c.color}">${c.icon}</div><div class="grow"><b>${esc(r.label)}</b><small>Every month on day ${r.day} · ${r.lastYm === ym ? 'logged this month ✓' : 'auto-logs on its day'}</small></div><div class="amt"><b class="num">${M(r.am)}</b></div></div>`; }).join('')}</div>`
+      : `<button class="bt-empty glass press" data-act="bt-rec">${icon('plus')} Add rent, recharge, subscriptions… they log themselves every month</button>`}
 
     <div class="bt-tiles">
       <div class="bt-tile glass"><small>Top category</small><b>${topCat ? `${store.cat(topCat[0]).icon} ${esc(store.cat(topCat[0]).name)}` : '—'}</b><span class="num">${topCat ? M(topCat[1]) : ''}</span></div>
@@ -102,6 +112,7 @@ export function budgetHomeHTML(txRow) {
 
     <div class="section-h"><h3>Recent</h3><button data-act="go:history">${icon('history')} All</button></div>
     <div class="list glass">${recent.length ? recent.map((t, i) => txRow(t, i)).join('') : `<div class="empty" style="padding:18px 8px">Nothing yet. Tap <b>Expense</b> to add your first one.</div>`}</div>
+    ${widgetsHTML}
   `;
 }
 

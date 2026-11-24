@@ -1,0 +1,34 @@
+/* Budget tracker extras: quick expenses, editors, calendar, compare, code widgets */
+.bt-qk{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px 12px;padding:2px 16px 4px}
+.bt-qk::-webkit-scrollbar{display:none}
+.bt-qchip{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:72px;height:72px;padding:6px 10px;border-radius:18px}
+.bt-qchip span{font-size:20px;line-height:1}
+.bt-qchip b{font-size:12px;font-weight:600;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bt-qchip small{font-size:11px;color:var(--muted)}
+.bt-qchip .ic{width:18px;height:18px}
+.bt-qchip.undo{box-shadow:inset 0 0 0 1.5px var(--warn)}
+.bt-qrow{display:grid;grid-template-columns:44px 1fr 76px 104px 40px;gap:6px;align-items:center;margin-bottom:8px}
+.bt-qrow .field{min-width:0;padding-left:10px;padding-right:10px}
+.bt-qrow .bt-qe{text-align:center;padding:0}
+.bt-qrow:has(.bt-qd){grid-template-columns:1fr 76px 52px 104px 40px}
+.bt-qrow .icon-btn{width:40px;height:40px}
+.bt-cal-h,.bt-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.bt-cal-h{margin-bottom:6px}
+.bt-cal-h span{text-align:center;font-size:10.5px;color:var(--faint);font-weight:600}
+.bt-d{aspect-ratio:1;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,.05);font-style:normal}
+.bt-d span{font-size:11px;color:var(--muted);font-weight:600}
+.bt-d.empty{background:none}
+.bt-d.l1{background:color-mix(in srgb,var(--a1) 22%,transparent)}
+.bt-d.l2{background:color-mix(in srgb,var(--a1) 42%,transparent)}
+.bt-d.l3{background:color-mix(in srgb,var(--a1) 64%,transparent)}
+.bt-d.l4{background:color-mix(in srgb,var(--a1) 88%,transparent)}
+.bt-d.l3 span,.bt-d.l4 span{color:#140d04}
+.bt-d.over{box-shadow:inset 0 0 0 1.5px var(--bad)}
+.bt-d.today{box-shadow:inset 0 0 0 1.5px var(--a2)}
+.bt-d.future{opacity:.35}
+.bt-cmp{display:inline-block;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.06)}
+.bt-cmp.up{color:var(--warn)}.bt-cmp.down{color:var(--good)}
+.bt-empty{width:100%;display:flex;align-items:center;gap:10px;padding:16px;border-radius:20px;font-size:13px;color:var(--muted);text-align:left}
+.bt-empty .ic{width:20px;height:20px;flex:none;color:var(--a2)}
+.bt-code{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;line-height:1.45;white-space:pre;min-height:220px;resize:vertical;tab-size:2}
+.w-code{font-size:14px;line-height:1.35;overflow:hidden}

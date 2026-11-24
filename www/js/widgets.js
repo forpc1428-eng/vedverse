@@ -94,8 +94,18 @@ export function customValue(cfg) {
     default: return sum(list);
   }
 }
+// code widgets: your own HTML with live placeholders (scripts and inline handlers are stripped)
+function renderTemplate(cfg, v) {
+  const s = stats(), st = store.s, target = +cfg.target || 0, isMoney = cfg.metric !== 'count';
+  const vars = { value: isMoney ? money(v, { dec: 0 }) : v, raw: v, target: isMoney ? money(target, { dec: 0 }) : target, pct: target ? Math.round(v / target * 100) : 0,
+    today: money(s.today), week: money(s.week), month: money(s.month), left: money(s.remaining), safe: money(Math.floor(s.allowance)), budget: money(st.monthlyBudget),
+    title: esc(cfg.title || ''), icon: esc(cfg.icon || '✦'), name: esc((st.name || '').split(' ')[0]), color: esc(cfg.color || 'var(--a2)') };
+  const html = String(cfg.html).replace(/<\s*\/?\s*(script|iframe|object|embed|link|meta)[^>]*>/gi, '').replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').replace(/javascript:/gi, '');
+  return `<div class="w-code">${html.replace(/\{(\w+)\}/g, (m, k) => vars[k] != null ? vars[k] : m)}</div>`;
+}
 export function renderCustom(cfg) {
   const v = customValue(cfg);
+  if (cfg.html) return renderTemplate(cfg, v);
   const isMoney = cfg.metric !== 'count';
   const val = isMoney ? money(v, { dec: 0 }) : v;
   const target = +cfg.target || 0;

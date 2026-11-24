@@ -234,7 +234,7 @@ public class VedExtrasPlugin extends Plugin {
     }
 
     @PluginMethod
-    public void quickBar(PluginCall call) { VedAlarmReceiver.quickBar(getContext(), call.getBoolean("on", false)); call.resolve(); }
+    public void quickBar(PluginCall call) { VedAlarmReceiver.quickBar(getContext(), call.getBoolean("on", false), call.getString("name", "Vedverse")); call.resolve(); }
 
     static void emit(String ev, JSONObject o) {
         VedExtrasPlugin p = inst;

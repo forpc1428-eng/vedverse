@@ -7,11 +7,12 @@ import { CATALOG, renderWidget, renderCustom, METRICS, RANGES, DISPLAYS, ring, b
 import * as UPI from './upi.js';
 import * as Scanner from './scanner.js';
 import { payload as hwPayload, openStudio } from './homewidgets.js';
-import { openReceive, openSplit, openBills, markBillPaid, openIdentity } from './tools.js';
+import { openReceive, openSplit, openBills, markBillPaid, openIdentity, syncIdentity } from './tools.js';
 import { greeting, logEvent, getLoc, timelineHTML, initAutoConfirm, onAutoPaid, scheduleReminders, biometricUnlock, onToggle, renderReceipt, openReceiptStyles, openStatement, openIncome, monthIncome, openThemeBuilder, todTheme, openTodEditor, openDockEditor, DOCK_OPTS, setLanguage, LANG_NAMES } from './extras.js';
 import { haptic, sfx, shatter, confetti, playMonth } from './fx.js';
 import { initNotify, onResume as notifResume, settingsRows as notifRows, statusRow as notifStatusRow, refreshStatus as notifRefresh, NOTIF_KEYS, onNotifSetting, openNotifStudio, allow as notifAllow, test as notifTest } from './notify.js';
 import { isBudget, budgetHomeHTML, openAddExpense, openCatBudgets, openAddSavings, modePickerHTML } from './budget.js';
+import { quickAdd, undoQuick, openQuickEditor, openRecurring, applyRecurring } from './budgetx.js';
 
 export const THEMES = {
   // deep, realistic palettes — `temp` is the accretion disk's inner temperature (K), yaw/pitch pick which part of the sky you see
@@ -91,7 +92,7 @@ function applyAppearance() {
   setLanguage(s.lang);
   applyDock();
   if (U) { U.setTheme(todTheme(t)); U.setCreature(s.creature); U.setParallax(s.parallax); U.setGrain(s.grain); U.setLayout && U.setLayout({ size: +s.bhSize || 1, x: +s.bhX || 0, y: +s.bhY || 0, spin: s.bhSpin == null ? 1 : +s.bhSpin, bright: s.bhBright == null ? 1 : +s.bhBright }); }
-  $('#brandLogo').innerHTML = LOGO(34, 'tb');
+  applyIdentity();
   $('#privacyBtn').innerHTML = icon(s.hideAmounts ? 'eyeOff' : 'eye');
 }
 
@@ -100,6 +101,15 @@ function applyAppearance() {
    ========================================================================= */
 async function initUniverse() {
   if (!store.s.three) { root.classList.add('no3d'); $('#gl').style.display = 'none'; return; }
+  if (store.s.bhEngine !== 'live') {
+    // Smooth: the black hole was ray-traced once at full quality and ships as a seamless video loop (no live GPU work)
+    const { VidVerse } = await import('./vidverse.js');
+    U = new VidVerse($('#bhv'));
+    $('#gl').style.display = 'none';
+    root.classList.add('vid');
+    U.setTheme(THEMES[store.s.theme] || THEMES.nebula);
+    return;
+  }
   try {
     const { Universe } = await import('./universe.js');
     U = new Universe($('#gl'), { quality: store.s.quality, particles: store.s.particles, parallax: store.s.parallax, creature: store.s.creature });
@@ -113,6 +123,16 @@ async function initUniverse() {
     console.warn('3D unavailable', e);
     U = null; root.classList.add('no3d'); $('#gl').style.display = 'none';
   }
+}
+// the name + icon you picked in “App icon & name”, used everywhere inside the app
+const appName = () => store.s.idName || 'Vedverse';
+const appLogo = (size, id) => store.s.idIcon > 0 ? `<img class="id-logo" src="assets/appicons/${String(store.s.idIcon).padStart(2, '0')}.webp" width="${size}" height="${size}" alt="" style="border-radius:24%;display:block">` : LOGO(size, id);
+function applyIdentity() {
+  const n = appName();
+  $('#brandLogo').innerHTML = appLogo(34, 'tb');
+  const w = $('.brand-word'); if (w) w.innerHTML = n === 'Vedverse' ? 'Ved<b>verse</b>' : `<b>${esc(n)}</b>`;
+  $('#brand').setAttribute('aria-label', n); document.title = n;
+  window.__vvAppName = n;
 }
 function syncUniverse() {
   if (!U) return;
@@ -208,7 +228,7 @@ function go(name, opts = {}) {
   if (U) U.mode(name === 'home' ? 'home' : (name === 'history' && skyMode) ? 'sky' : 'side');
   fpsPolicy();
   if (prev !== name) { haptic('tick'); sfx.tick(); const sc = $('#s-' + name); if (sc && !opts.keepScroll) sc.scrollTop = 0; }
-  $('#editBtn').style.visibility = name === 'home' && !isBudget() ? '' : 'hidden';
+  $('#editBtn').style.visibility = name === 'home' ? '' : 'hidden';
 }
 function moveBlob() {
   const on = $('.dock-item.on'), blob = $('#dockBlob'), dock = $('#dock');
@@ -240,11 +260,14 @@ function applyMode() {
   const b = isBudget();
   root.classList.toggle('mode-budget', b);
   const d = $('#dockScan'); if (d) { d.innerHTML = `<span class="scan-orb">${icon(b ? 'plus' : 'scan')}</span>`; d.setAttribute('aria-label', b ? 'Add expense' : 'Scan and pay'); }
-  if (b && editing) editing = false;
-  if (current === 'home') { render('home'); $('#editBtn').style.visibility = b ? 'hidden' : ''; }
+  if (current === 'home') render('home');
 }
 function renderHome() {
-  if (isBudget()) { $('#s-home').innerHTML = budgetHomeHTML(txRow); syncUniverse(); return; }
+  if (isBudget()) {
+    const wl = store.data.widgets.map((w, i) => renderWidget(w, editing).replace('class="widget', `style="--i:${i}" class="widget`)).join('');
+    $('#s-home').innerHTML = budgetHomeHTML(txRow, `<div class="section-h"><h3>${editing ? 'Drag to rearrange' : 'Your widgets'}</h3><button data-act="${editing ? 'done-edit' : 'gallery'}">${editing ? icon('check') + ' Done' : icon('plus') + ' Add'}</button></div><div class="grid ${editing ? 'editing' : ''}" id="wgrid">${wl}${editing ? `<button class="add-widget press" data-act="gallery">${icon('plus')} Add widget</button>` : ''}</div>`);
+    syncUniverse(); return;
+  }
   const s = stats(), st = store.s;
   const pct = st.monthlyBudget ? s.month / st.monthlyBudget : 0;
   const pillCls = pct > 1 ? 'bad' : pct > 0.8 ? 'warn' : '';
@@ -335,8 +358,13 @@ function openBuilder(existingId) {
   const colors = ['#8b5cf6', '#22d3ee', '#f472b6', '#10b981', '#f97316', '#fbbf24', '#ef4444', '#3b82f6', '#a3e635', '#ffffff'];
   const chips = (key, map) => `<div class="w-chips">${Object.entries(map).map(([k, v]) => `<button class="chip ${String(cfg[key]) === k ? 'on' : ''}" data-k="${key}" data-v="${k}">${v}</button>`).join('')}</div>`;
   const cats = { all: 'All', ...Object.fromEntries(store.data.categories.map(c => [c.id, c.icon + ' ' + c.name])) };
-  const html = () => `<h3>${ex ? 'Edit' : 'Create'} widget</h3><p class="sub">Live preview updates as you build.</p>
+  const html = () => `<h3>${ex ? 'Edit' : 'Create'} widget</h3><p class="sub">Live preview updates as you build. Design it visually or write it as code.</p>
+    <div class="seg glass" id="bMode" style="margin-bottom:12px"><div class="seg-k"></div><button class="on" data-bm="v">${icon('palette')} Visual</button><button data-bm="c">${icon('edit')} Code</button></div>
     <div class="builder-prev" id="bprev"></div>
+    <div id="bCode" hidden><textarea class="field bt-code" id="bJson" spellcheck="false" autocapitalize="off" autocomplete="off" rows="14"></textarea><small id="bErr" class="tiny" style="display:block;min-height:16px;color:var(--bad)"></small>
+      <small class="muted tiny" style="display:block;line-height:1.5">Keys: <b>title</b>, <b>icon</b>, <b>metric</b> (${Object.keys(METRICS).join(' · ')}), <b>range</b> (${Object.keys(RANGES).join(' · ')}), <b>cat</b>, <b>display</b> (${Object.keys(DISPLAYS).join(' · ')}), <b>size</b> (s · w), <b>target</b>, <b>color</b>.<br>Add <b>"html"</b> for your own layout. Placeholders: {value} {target} {pct} {today} {week} {month} {left} {safe} {budget} {title} {icon} {name} {color}</small>
+      <div class="w-chips mt"><button class="chip" data-tpl="1">Template: big number</button><button class="chip" data-tpl="2">Template: progress</button><button class="chip" data-tpl="3">Template: two stats</button></div></div>
+    <div id="bVis">
     <div class="form-row"><label>Title & icon</label><div class="btn-row"><input class="field" id="bTitle" value="${esc(cfg.title)}" style="flex:3"><input class="field center" id="bIcon" value="${esc(cfg.icon)}" maxlength="4" style="flex:1"></div></div>
     <div class="form-row"><label>Metric</label>${chips('metric', METRICS)}</div>
     <div class="form-row"><label>Time range</label>${chips('range', RANGES)}</div>
@@ -345,12 +373,34 @@ function openBuilder(existingId) {
     <div class="form-row"><label>Size</label>${chips('size', { s: 'Small 1×1', w: 'Wide 2×1' })}</div>
     <div class="form-row"><label>Target (for ring / bar / budget left)</label><input class="field" id="bTarget" type="number" inputmode="decimal" value="${cfg.target || ''}"></div>
     <div class="form-row"><label>Glass tint</label><div class="swatches">${colors.map(c => `<button class="swatch ${cfg.color === c ? 'on' : ''}" style="--c:${c}" data-col="${c}"></button>`).join('')}</div></div>
+    </div>
     <div class="btn-row mt">${ex ? `<button class="btn danger press" id="bDel">${icon('trash')} Delete</button>` : ''}<button class="btn primary press" id="bSave">${icon('check')} ${ex ? 'Save' : 'Add to home'}</button></div>`;
   openSheet(html(), {
     tall: true,
     onMount(el, close) {
       const prev = () => { $('#bprev', el).innerHTML = `<div class="widget glass size-${cfg.size} custom" style="--tint:${cfg.color}"><div class="w-shine"></div>${renderCustom(cfg)}</div>`; };
       prev();
+      segKnob($('#bMode', el));
+      const TPL = {
+        1: '<div style="font-size:12px;opacity:.7">{icon} {title}</div><div style="font-size:30px;font-weight:800;color:{color}">{value}</div><div style="font-size:12px;opacity:.6">{pct}% of {target}</div>',
+        2: '<div style="display:flex;justify-content:space-between;font-size:13px"><b>{icon} {title}</b><span>{pct}%</span></div><div style="height:10px;border-radius:9px;background:rgba(255,255,255,.1);margin:12px 0 8px;overflow:hidden"><div style="height:100%;width:{pct}%;max-width:100%;background:{color};border-radius:9px"></div></div><div style="font-size:12px;opacity:.7">{value} of {target}</div>',
+        3: '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><small style="opacity:.6">Today</small><div style="font-size:20px;font-weight:800">{today}</div></div><div><small style="opacity:.6">Left</small><div style="font-size:20px;font-weight:800;color:{color}">{left}</div></div></div>',
+      };
+      const code = () => { const { id, ...rest } = cfg; $('#bJson', el).value = JSON.stringify(rest, null, 2); $('#bErr', el).textContent = ''; };
+      const syncVisual = () => {
+        $$('[data-k]', el).forEach(b => b.classList.toggle('on', String(cfg[b.dataset.k]) === b.dataset.v));
+        $$('[data-col]', el).forEach(b => b.classList.toggle('on', b.dataset.col === cfg.color));
+        $('#bTitle', el).value = cfg.title || ''; $('#bIcon', el).value = cfg.icon || ''; $('#bTarget', el).value = cfg.target || '';
+      };
+      $('#bJson', el).addEventListener('input', () => {
+        try { const o = JSON.parse($('#bJson', el).value); if (!o || typeof o !== 'object') throw new Error('must be an object'); delete o.id; Object.keys(cfg).forEach(k => { if (k !== 'id' && !(k in o)) delete cfg[k]; }); Object.assign(cfg, o); $('#bErr', el).textContent = ''; prev(); }
+        catch (err) { $('#bErr', el).textContent = 'Fix the code: ' + err.message; }
+      });
+      el.addEventListener('click', e => {
+        const m = e.target.closest('[data-bm]');
+        if (m) { const c = m.dataset.bm === 'c'; $$('[data-bm]', el).forEach(b => b.classList.toggle('on', b === m)); segKnob($('#bMode', el)); $('#bCode', el).hidden = !c; $('#bVis', el).hidden = c; if (c) code(); else syncVisual(); haptic('tick'); return; }
+        const tp = e.target.closest('[data-tpl]'); if (tp) { cfg.html = TPL[tp.dataset.tpl]; code(); prev(); haptic('tick'); return; }
+      });
       el.addEventListener('click', e => {
         const c = e.target.closest('[data-k]'), col = e.target.closest('[data-col]');
         if (c) { cfg[c.dataset.k] = c.dataset.v; $$(`[data-k="${c.dataset.k}"]`, el).forEach(b => b.classList.toggle('on', b === c)); haptic('tick'); prev(); }
@@ -537,7 +587,8 @@ const SETTINGS = () => [
     { k: 'dockLabels', t: 'toggle', label: 'Dock labels' },
   ] },
   { id: 'universe', h: 'Universe', ic: 'cube', d: 'Black hole, 3D, time of day', rows: [
-    { k: 'three', t: 'toggle', label: 'Live 3D universe', sub: 'Turn off to save the most battery', reload: true },
+    { k: 'bhEngine', t: 'seg', label: 'Black hole engine', opts: { video: 'Smooth (no lag)', live: 'Live 3D' }, sub: 'Smooth plays the same ray-traced black hole as a pre-rendered loop. Live 3D calculates it in real time (reacts to tilt, heavier).', reload: true },
+    { k: 'three', t: 'toggle', label: 'Animated universe', sub: 'Turn off to save the most battery', reload: true },
     { k: 'creature', t: 'toggle', label: 'Black hole', sub: 'Burns bright when you spend well, flickers when you overspend' },
     { k: 'quality', t: 'seg', label: 'Render quality', opts: { auto: 'Auto', low: 'Low', med: 'Med', high: 'Ultra' }, reload: true },
     { t: 'h', label: 'Black hole' },
@@ -683,7 +734,7 @@ function renderSettings() {
   } else {
     el.innerHTML = modePickerHTML() + search + `<div class="set-cats">${cats.map(c => `<button class="set-cat glass press" data-setcat="${c.id}"><span class="set-ic">${icon(c.ic)}</span><span class="set-ct"><b>${c.h}</b><small>${c.d}</small></span>${icon('chevron', 'chev')}</button>`).join('')}
       <button class="set-cat glass press" data-setcat="features"><span class="set-ic">${icon('spark')}</span><span class="set-ct"><b>Features</b><small>Every on/off switch in one list</small></span>${icon('chevron', 'chev')}</button></div>` +
-      `<div class="about">${LOGO(56, 'ab')}<div><b style="font-family:var(--font-d);font-size:16px;color:var(--text)">Vedverse</b> · v2.0</div><div>Crafted for Vedant · Works fully offline. Payments happen in your UPI app; Vedverse never touches your money or bank details.</div></div>`;
+      `<div class="about">${appLogo(56, 'ab')}<div><b style="font-family:var(--font-d);font-size:16px;color:var(--text)">${esc(appName())}</b> · v2.0</div><div>Crafted for Vedant · Works fully offline. Payments happen in your UPI app; Vedverse never touches your money or bank details.</div></div>`;
   }
   if (document.activeElement && document.activeElement.id === 'setSearch') {} else if (setQuery) { const i = $('#setSearch'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
   $$('#s-settings .seg').forEach(segKnob);
@@ -1223,7 +1274,7 @@ async function receiptImageClassic(tx) {
   const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
   rr(90, 220, 900, 1080, 70); g.fillStyle = 'rgba(255,255,255,.1)'; g.fill(); g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 3; g.stroke();
   g.textAlign = 'center'; g.fillStyle = '#fff';
-  g.font = '800 64px Sora, sans-serif'; g.fillText('Vedverse', W / 2, 150);
+  g.font = '800 64px Sora, sans-serif'; g.fillText(appName(), W / 2, 150);
   const ok = tx.status === 'paid';
   g.beginPath(); g.arc(W / 2, 380, 90, 0, 7); g.fillStyle = ok ? '#4ee3a0' : tx.status === 'pending' ? '#ffcc66' : '#ff6b81'; g.fill();
   g.strokeStyle = '#06331f'; g.lineWidth = 16; g.lineCap = 'round'; g.beginPath(); if (ok) { g.moveTo(W / 2 - 40, 382); g.lineTo(W / 2 - 8, 414); g.lineTo(W / 2 + 44, 352); } else { g.moveTo(W / 2 - 34, 346); g.lineTo(W / 2 + 34, 414); g.moveTo(W / 2 + 34, 346); g.lineTo(W / 2 - 34, 414); } g.stroke();
@@ -1292,7 +1343,7 @@ function pinPad(title, onDone) {
   const el = $('#lock');
   let v = '';
   el.hidden = false;
-  el.innerHTML = `${LOGO(64, 'lk')}<h3>${title}</h3><div class="pin-dots">${'<i></i>'.repeat(4)}</div><div class="keypad">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map(k => `<button class="key ${k ? '' : 'dis'}" data-k="${k}">${k === 'del' ? icon('backspace') : k}</button>`).join('')}</div>`;
+  el.innerHTML = `${appLogo(64, 'lk')}<h3>${title}</h3><div class="pin-dots">${'<i></i>'.repeat(4)}</div><div class="keypad">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map(k => `<button class="key ${k ? '' : 'dis'}" data-k="${k}">${k === 'del' ? icon('backspace') : k}</button>`).join('')}</div>`;
   el.onclick = e => {
     const k = e.target.closest('[data-k]'); if (!k || !k.dataset.k) return;
     if (k.dataset.k === 'del') v = v.slice(0, -1); else if (v.length < 4) v += k.dataset.k;
@@ -1346,6 +1397,10 @@ async function act(a, el) {
     case 'receive': return openReceive({ openSheet, toast, haptic });
     case 'split': return openSplit({ openSheet, toast, haptic });
     case 'bills': return openBills({ openSheet, toast, haptic, openPay });
+    case 'bt-q': return quickAdd(v, { toast, haptic, onChange: () => { render(); syncUniverse(); } });
+    case 'bt-undo': return undoQuick({ toast, onChange: () => { render(); syncUniverse(); } });
+    case 'bt-qedit': return openQuickEditor({ openSheet, toast, haptic, onChange: () => render() });
+    case 'bt-rec': return openRecurring({ openSheet, toast, haptic, onChange: () => { applyRecurring(); render(); syncUniverse(); } });
     case 'bt-add': return openAddExpense({ openSheet, toast, haptic, onChange: () => { render(); syncUniverse(); } });
     case 'bt-income': return openIncome({ openSheet, toast, haptic, onChange: () => { render(); syncUniverse(); } });
     case 'bt-cats': return openCatBudgets({ openSheet, toast, haptic, onChange: () => render() });
@@ -1355,7 +1410,7 @@ async function act(a, el) {
     case 'notif-allow': return notifAllow();
     case 'notif-settings': { const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.VedExtras; if (P) P.openNotifSettings(); else toast('Works in the Android app', 'info'); return; }
     case 'notif-test': return notifTest();
-    case 'identity': return openIdentity({ openSheet, toast, haptic, logEvent });
+    case 'identity': return openIdentity({ openSheet, toast, haptic, logEvent, onIdentity: applyIdentity });
     case 'income': return openIncome({ openSheet, toast, haptic, onChange: () => { render(); } });
     case 'statement': return openStatement({ openSheet, toast, haptic, saveBlob: saveBlobFile });
     case 'themebuilder': return openThemeBuilder({ openSheet, toast, haptic, THEMES, preview: th => U && U.setTheme(th), apply: () => { applyAppearance(); renderSettings(); } });
@@ -1467,7 +1522,8 @@ function bindGlobal() {
     const we = e.target.closest('[data-we]'); if (we) { openBuilder(we.dataset.we); return; }
     const tx = e.target.closest('[data-tx]'); if (tx) { openTx(tx.dataset.tx); return; }
     const hf = e.target.closest('[data-hf]'); if (hf) { histFilter = hf.dataset.hf; histLimit = 80; haptic('tick'); renderHistory(); return; }
-    const sk = e.target.closest('[data-sky]'); if (sk) { histView = sk.dataset.sky === '2' ? 'timeline' : 'list'; skyMode = sk.dataset.sky === '1'; haptic('tap'); if (U) U.mode(skyMode ? 'sky' : 'side'); renderHistory(); if (skyMode && !U) toast('Turn on the 3D universe in Settings to see your sky', 'cube'); return; }
+    const sk = e.target.closest('[data-sky]'); if (sk && sk.dataset.sky === '1' && U && U.isVideo) { toast('Sky view needs Live 3D: Settings → Universe → Black hole engine', 'sky', 3200); return; }
+    if (sk) { histView = sk.dataset.sky === '2' ? 'timeline' : 'list'; skyMode = sk.dataset.sky === '1'; haptic('tap'); if (U) U.mode(skyMode ? 'sky' : 'side'); renderHistory(); if (skyMode && !U) toast('Turn on the 3D universe in Settings to see your sky', 'cube'); return; }
     const sp = e.target.closest('[data-sp]'); if (sp) { statPeriod = sp.dataset.sp; haptic('tick'); renderStats(); return; }
     const th = e.target.closest('[data-theme]'); if (th) { store.s.theme = th.dataset.theme; store.save(); applyAppearance(); renderSettings(); haptic('success'); if (U) U.supernova(); return; }
     const sc = e.target.closest('[data-setcat]'); if (sc) { setPage = sc.dataset.setcat; haptic('tap'); renderSettings(); $('#s-settings').scrollTop = 0; return; }
@@ -1651,6 +1707,7 @@ async function boot() {
   bindGlobal();
   bindWidgetDrag();
   document.addEventListener('scroll', () => { scrolling = true; fpsPolicy(); clearTimeout(scrollT); scrollT = setTimeout(() => { scrolling = false; fpsPolicy(); }, 220); }, { passive: true, capture: true });
+  try { applyRecurring(); } catch (e) {}
   go('home');
   performance.mark('vv-home');
   window.__vvPayOutside = () => !!store.s.payOutside;
@@ -1669,7 +1726,7 @@ async function boot() {
   if (s.intro && !s.reducedMotion && store.data.firstRun && !s.introSeen && !/[?&]nointro/.test(location.search)) {
     s.introSeen = true; store.save();
     const intro = $('#intro');
-    $('#introLogo').innerHTML = LOGO(110, 'in');
+    $('#introLogo').innerHTML = appLogo(110, 'in'); $('.intro-word').innerHTML = [...appName()].map(c => `<span>${esc(c)}</span>`).join('');
     intro.hidden = false;
     if (!U) intro.classList.add('solid');
     $('#app').classList.add('dim');
@@ -1682,6 +1739,7 @@ async function boot() {
   if (s.lock && s.pin) await lockApp();
   initAutoConfirm({ toast, onChange: () => { render(); syncUniverse(); } }).then(a => { window.__vvAuto = a; });
   initNotify({ openSheet, toast, haptic, onChange: () => { render(); syncUniverse(); } });
+  syncIdentity().then(ch => { if (ch) { applyIdentity(); render(); } });
   setInterval(() => { if (store.s.timeOfDay && U) U.setTheme(todTheme(THEMES[store.s.theme] || THEMES.nebula)); }, 10 * 60000);
   if (/[?&]scan=1/.test(location.search) || s.scanOnLaunch) openScanner();
   pushWidgets();

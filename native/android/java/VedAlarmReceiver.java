@@ -146,7 +146,7 @@ public class VedAlarmReceiver extends BroadcastReceiver {
             if (o.optBoolean("private", false)) {
                 b.setVisibility(NotificationCompat.VISIBILITY_PRIVATE);
                 b.setPublicVersion(new NotificationCompat.Builder(c, channel(c, sound, heads, vib)).setSmallIcon(R.drawable.vv_ic_scan)
-                        .setContentTitle("Vedverse").setContentText(o.optString("publicText", "You have a new reminder")).setColor(color).build());
+                        .setContentTitle(o.optString("appName", "Vedverse")).setContentText(o.optString("publicText", "You have a new reminder")).setColor(color).build());
             } else b.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
             JSONArray acts = o.optJSONArray("actions");
             if (acts != null) for (int k = 0; k < acts.length() && k < 3; k++) {
@@ -185,7 +185,8 @@ public class VedAlarmReceiver extends BroadcastReceiver {
     /* ---------------------------------------------------------------- always-on quick bar */
     static final int BAR_ID = 4242;
 
-    static void quickBar(Context c, boolean on) {
+    static void quickBar(Context c, boolean on) { quickBar(c, on, "Vedverse"); }
+    static void quickBar(Context c, boolean on, String appName) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(c);
         if (!on) { nm.cancel(BAR_ID); return; }
         try {
@@ -199,7 +200,7 @@ public class VedAlarmReceiver extends BroadcastReceiver {
                 }
             }
             NotificationCompat.Builder b = new NotificationCompat.Builder(c, ch)
-                    .setSmallIcon(R.drawable.vv_ic_scan).setContentTitle("Vedverse").setContentText("Scan · Receive · Pay — one tap away")
+                    .setSmallIcon(R.drawable.vv_ic_scan).setContentTitle(appName == null || appName.isEmpty() ? "Vedverse" : appName).setContentText("Scan · Receive · Pay — one tap away")
                     .setColor(0xFFF2A144).setOngoing(true).setShowWhen(false).setSilent(true).setPriority(NotificationCompat.PRIORITY_LOW)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setContentIntent(open(c, 6900, "vedverse://home")).setLargeIcon(appIcon(c))
                     .addAction(0, "Scan", open(c, 6901, "vedverse://scan"))

@@ -147,7 +147,7 @@ function style(o, kind) {
   const s = store.s;
   const accent = s.notifColor || s.accent || '#f2a144';
   return { ...o, sound: s.notifSound, vib: s.notifVib, heads: !!s.notifHeads || kind === 'bill', color: /^#[0-9a-f]{6}$/i.test(accent) ? accent : '#f2a144',
-    private: !!s.notifPrivate, publicText: kind === 'bill' ? 'A bill reminder' : 'You have a new reminder', actions: s.notifActions ? (o.actions || []) : [] };
+    private: !!s.notifPrivate, appName: s.idName || 'Vedverse', publicText: kind === 'bill' ? 'A bill reminder' : 'You have a new reminder', actions: s.notifActions ? (o.actions || []) : [] };
 }
 const inQuiet = (h, a, b) => a === b ? false : a > b ? (h >= a || h < b) : (h >= a && h < b);
 function unquiet(at) {
@@ -523,7 +523,7 @@ export const NOTIF_KEYS = new Set(settingsRows().filter(r => r.k).map(r => r.k))
 /* ================================================================== toggles + init */
 export async function onNotifSetting(k, v) {
   const P = X();
-  if (k === 'quickBar') { if (P) { if (v) { await refreshStatus(); if (!(status && status.enabled)) await allow(); } try { await P.quickBar({ on: !!v }); } catch (e) {} } else if (v) hooks.toast && hooks.toast('Works in the Android app', 'info'); return; }
+  if (k === 'quickBar') { if (P) { if (v) { await refreshStatus(); if (!(status && status.enabled)) await allow(); } try { await P.quickBar({ on: !!v, name: store.s.idName || 'Vedverse' }); } catch (e) {} } else if (v) hooks.toast && hooks.toast('Works in the Android app', 'info'); return; }
   if (v && P && k !== 'notifTone' && typeof v === 'boolean') { await refreshStatus(); if (!(status && status.enabled)) allow(); }
   reschedule(600);
 }
@@ -535,7 +535,7 @@ export async function initNotify(ctx) {
   try { (await P.takeActions()).items.forEach(onAction); } catch (e) {}
   try { P.addListener('notifAction', a => { onAction(a); P.takeActions().catch(() => {}); }); } catch (e) {}
   await refreshStatus();
-  if (store.s.quickBar && status && status.enabled) { try { P.quickBar({ on: true }); } catch (e) {} }
+  if (store.s.quickBar && status && status.enabled) { try { P.quickBar({ on: true, name: store.s.idName || 'Vedverse' }); } catch (e) {} }
   scheduleNow(); live();
   // friendly, optional ask — once, a few seconds after launch, only if notifications are off
   if (!store.data.notifAsked && !(status && status.enabled)) {

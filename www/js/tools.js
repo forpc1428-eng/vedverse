@@ -160,6 +160,16 @@ export function openBills(ctx) {
 }
 
 /* ------------------------------------------------------------------ App icon & name (launcher) */
+// keep the in-app name/icon in sync with what Android shows (e.g. after a reinstall or restore)
+export async function syncIdentity() {
+  const P = UPI.upiPlugin(); if (!P || !P.getAppIcon) return false;
+  try {
+    const cur = await P.getAppIcon(); if (!cur) return false;
+    if (store.s.idIcon === cur.icon && store.s.idName) return false;
+    const cat = await (await fetch('assets/appicons/catalog.json')).json();
+    store.s.idIcon = cur.icon || 0; if (!store.s.idName || cur.name) store.s.idName = cat.names[cur.name] || store.s.idName || ''; store.save(); return true;
+  } catch (e) { return false; }
+}
 export async function openIdentity(ctx) {
   const { openSheet, toast, haptic } = ctx;
   let cat;
@@ -201,7 +211,8 @@ export async function openIdentity(ctx) {
         if (f) { el.querySelectorAll('[data-f]').forEach(b => b.classList.toggle('on', b === f)); el.querySelectorAll('.id-nm').forEach(b => { b.hidden = f.dataset.f !== 'all' && b.dataset.kind !== f.dataset.f; }); haptic('tick'); }
       });
       $('#idApply').onclick = async () => {
-        if (!P || !P.setAppIcon) { toast('Available in the Android app', 'info'); return; }
+        store.s.idIcon = sel.icon; store.s.idName = cat.names[sel.name]; store.save(); ctx.onIdentity && ctx.onIdentity();
+        if (!P || !P.setAppIcon) { toast('Updated inside the app (home-screen icon changes in the Android app)', 'check', 3000); paint(); return; }
         try {
           let r;
           if (launch.has(sel.name)) { r = await P.setAppIcon({ icon: sel.icon, name: sel.name }); cur = { ...sel }; }

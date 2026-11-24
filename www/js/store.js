@@ -22,6 +22,8 @@ export const DEFAULT_SETTINGS = {
   grain: true,
   liquid: true,
   three: true,
+  bhEngine: 'video',
+  idIcon: 0, idName: '',      // the icon + name picked in “App icon & name” (shown inside the app too)      // video = pre-rendered black hole (zero lag) | live = real-time ray tracing
   quality: 'auto',          // low | med | high | auto
   particles: 1,             // multiplier 0.3..1.6
   creature: true,
