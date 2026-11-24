@@ -89,7 +89,7 @@ export function logEvent(kind, data = {}) {
 const KIND = { scan: ['scan', 'Scanned a payment QR'], 'scan-other': ['scan', 'Scanned a QR (not a payment)'], paste: ['paste', 'Pasted a UPI ID'], 'pay-start': ['bolt', 'Started a payment'], paid: ['check', 'Payment confirmed'], pending: ['history', 'Payment pending'], failed: ['alert', 'Payment failed'], cancelled: ['close', 'Payment cancelled'], auto: ['check', 'Auto-confirmed from notification'], receipt: ['share', 'Shared a receipt'], bill: ['calendar', 'Bill'], income: ['download', 'Money in'], icon: ['spark', 'Changed app icon / name'], theme: ['palette', 'Changed theme'], statement: ['download', 'Made a PDF statement'] };
 export function timelineHTML(q = '') {
   const ql = q.toLowerCase();
-  const list = store.data.events.filter(e => !ql || JSON.stringify(e).toLowerCase().includes(ql));
+  const list = store.data.events.filter(e => !ql || JSON.stringify(e).toLowerCase().includes(ql)).slice(0, 250);   // newest 250: keeps the timeline instant
   if (!list.length) return `<div class="empty"><div class="big-e">🛰️</div>${store.s.timeline ? 'Your timeline is empty.<br>Scans, payments and more will appear here.' : 'Timeline is off. Turn it on in Settings → History & data.'}</div>`;
   const groups = {}; list.forEach(e => { const d = new Date(e.t).toDateString(); (groups[d] = groups[d] || []).push(e); });
   return Object.entries(groups).map(([d, es]) => `<div class="day-h"><span>${d === new Date().toDateString() ? 'Today' : new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span><span>${es.length}</span></div>

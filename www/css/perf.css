@@ -124,3 +124,67 @@ html.anim-none .screen,html.anim-none .sheet,html.anim-none .pay,html.anim-none 
 .scan-top .scan-flash{justify-self:end}
 .scan-top .scan-badge{justify-self:center;max-width:52vw;overflow:hidden;text-overflow:ellipsis}
 .scan-hint{padding:0 18px}
+/* lite: set automatically when the phone struggles. No live blur anywhere, same look with a slightly denser frost */
+html.lite .dock.glass,html.lite .icon-btn.glass,html.lite .scan-badge.glass,html.lite .scan-flash.glass,html.lite .scan-act.glass,html.lite .lock-chip{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(14,16,26,.82)!important}
+html.lite .press{will-change:auto}
+/* ---------- app mode picker (top of Settings) ---------- */
+.mode-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.mode-tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:16px 14px 14px;border-radius:22px;text-align:left;transition:transform .4s var(--spring),box-shadow .3s}
+.mode-tile b{font-family:var(--font-d);font-size:16px;margin-top:6px}
+.mode-tile small{font-size:12px;color:var(--muted)}
+.mode-ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.mode-ic .ic{width:22px;height:22px}
+.mode-tile.on{box-shadow:inset 0 0 0 1.5px var(--a1),0 10px 30px -12px var(--a1)}
+.mode-tile.on .mode-ic{background:linear-gradient(140deg,var(--a2),var(--a1));color:#120c03;box-shadow:0 6px 18px -6px var(--a1)}
+/* ---------- budget tracker home ---------- */
+.bt-hero{height:max(270px,36vh)}
+.bt-quick{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:10px;margin:4px 0 12px}
+.bt-q{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:74px;border-radius:20px;font-size:13px;font-weight:600}
+.bt-q .ic{width:22px;height:22px}
+.bt-q.primary{background:linear-gradient(135deg,var(--a2),var(--a1));color:#120c03;box-shadow:0 12px 30px -12px var(--a1)}
+.bt-over{display:flex;align-items:center;gap:16px;padding:16px}
+.bt-ring{position:relative;width:92px;height:92px;flex:none}
+.bt-ring-t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.bt-ring-t b{font-size:19px}.bt-ring-t small{font-size:10.5px;color:var(--muted)}
+.bt-over-rows{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;min-width:0}
+.bt-over-rows small{display:block;font-size:11px;color:var(--muted)}
+.bt-over-rows b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.bt-over-rows .good,.bt-over .good{color:var(--good)}.bt-over-rows .bad{color:var(--bad)}
+.bt-cats{padding:6px 14px}
+.bt-cat{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.bt-cat:last-child{border-bottom:0}
+.bt-cat-ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:18px;flex:none;background:color-mix(in srgb,var(--c) 22%,rgba(255,255,255,.04));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent)}
+.bt-cat-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.bt-cat-top b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bt-cat-top span{font-size:13.5px;font-weight:600;white-space:nowrap}.bt-cat-top small{color:var(--muted);font-weight:500}
+.bt-cat-sub{display:block;font-size:11.5px;color:var(--muted);margin-top:4px}
+.bt-cat.warn .bt-cat-sub{color:var(--warn)}.bt-cat.bad .bt-cat-sub{color:var(--bad)}
+.bt-bar{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:7px}
+.bt-bar.big{height:10px;margin:10px 0 8px}
+.bt-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--a2),var(--a1));transition:width .8s var(--out)}
+.bt-bar i.nolim{background:color-mix(in srgb,var(--c) 55%,transparent);opacity:.45}
+.bt-cat.warn .bt-bar i{background:linear-gradient(90deg,#ffd166,var(--warn))}.bt-cat.bad .bt-bar i{background:linear-gradient(90deg,#ff8a8a,var(--bad))}
+.bt-week{padding:16px 16px 12px}
+.bt-week-f{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--muted)}
+.bt-week-f b{color:var(--text);margin-left:4px}
+.bt-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.bt-tile{padding:13px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.bt-tile small{font-size:11.5px;color:var(--muted)}
+.bt-tile b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bt-tile span{font-size:12px;color:var(--muted)}
+.bt-goal{padding:16px}
+.bt-goal-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.bt-goal-top small{color:var(--muted)}.bt-goal>small{font-size:12px;color:var(--muted)}
+/* add expense sheet */
+.bt-amt{display:flex;align-items:center;gap:6px;padding:14px 18px;border-radius:22px}
+.bt-amt span{font-size:30px;color:var(--muted);font-weight:600}
+.bt-amt input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font-size:40px;font-weight:700;font-family:var(--font-d)}
+.bt-chips{flex-wrap:wrap}
+.bt-chips .chip.on{background:linear-gradient(135deg,var(--a2),var(--a1));color:#120c03}
+.bt-lim{padding:4px 12px}
+.bt-lim-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.bt-lim-row:last-child{border-bottom:0}
+.bt-lim-row .grow small{font-size:11.5px}
+.bt-lim-row input{width:110px;flex:none;text-align:right}
+.bt-cat-top span{flex:none}
+.bt-cat-top b{min-width:0}

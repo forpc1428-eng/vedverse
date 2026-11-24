@@ -139,7 +139,9 @@ public class VedAlarmReceiver extends BroadcastReceiver {
             if (!im.isEmpty()) {
                 try { int k = im.indexOf(','); byte[] by = Base64.decode(k >= 0 ? im.substring(k + 1) : im, Base64.DEFAULT); img = BitmapFactory.decodeByteArray(by, 0, by.length); } catch (Exception ignored) { }
             }
-            if (img != null) b.setLargeIcon(img).setStyle(new NotificationCompat.BigPictureStyle().bigPicture(img).bigLargeIcon((Bitmap) null).setSummaryText(body));
+            Bitmap appIc = appIcon(c);
+            if (appIc != null) b.setLargeIcon(appIc);
+            if (img != null) b.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(img).bigLargeIcon((Bitmap) null).setSummaryText(body));
             else b.setStyle(new NotificationCompat.BigTextStyle().bigText(body));
             if (o.optBoolean("private", false)) {
                 b.setVisibility(NotificationCompat.VISIBILITY_PRIVATE);
@@ -163,6 +165,23 @@ public class VedAlarmReceiver extends BroadcastReceiver {
         } catch (SecurityException ignored) { } catch (Exception ignored) { }
     }
 
+    /* ---------------------------------------------------------------- the icon you picked in Vedverse (Settings → icon & name) */
+    static Bitmap appIcon(Context c) {
+        try {
+            int icon = c.getSharedPreferences("vv_identity", Context.MODE_PRIVATE).getInt("icon", 0);
+            int res = icon <= 0 ? c.getResources().getIdentifier("ic_launcher", "mipmap", c.getPackageName())
+                    : c.getResources().getIdentifier(String.format(java.util.Locale.US, "vv_ic_%02d", icon), "mipmap", c.getPackageName());
+            if (res == 0) return null;
+            android.graphics.drawable.Drawable d = androidx.core.content.ContextCompat.getDrawable(c, res);
+            if (d == null) return null;
+            int px = (int) (64 * c.getResources().getDisplayMetrics().density);
+            Bitmap bm = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas cv = new android.graphics.Canvas(bm);
+            d.setBounds(0, 0, px, px); d.draw(cv);
+            return bm;
+        } catch (Exception e) { return null; }
+    }
+
     /* ---------------------------------------------------------------- always-on quick bar */
     static final int BAR_ID = 4242;
 
@@ -182,7 +201,7 @@ public class VedAlarmReceiver extends BroadcastReceiver {
             NotificationCompat.Builder b = new NotificationCompat.Builder(c, ch)
                     .setSmallIcon(R.drawable.vv_ic_scan).setContentTitle("Vedverse").setContentText("Scan · Receive · Pay — one tap away")
                     .setColor(0xFFF2A144).setOngoing(true).setShowWhen(false).setSilent(true).setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setContentIntent(open(c, 6900, "vedverse://home"))
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setContentIntent(open(c, 6900, "vedverse://home")).setLargeIcon(appIcon(c))
                     .addAction(0, "Scan", open(c, 6901, "vedverse://scan"))
                     .addAction(0, "Receive", open(c, 6902, "vedverse://receive"))
                     .addAction(0, "Pay UPI ID", open(c, 6903, "vedverse://manual"));

@@ -48,7 +48,7 @@ html.liquid .liquidable{-webkit-backdrop-filter:url(#liquid-soft) blur(calc(var(
 html.liquid .dock{-webkit-backdrop-filter:url(#liquid) blur(14px) saturate(200%) brightness(1.08);backdrop-filter:url(#liquid) blur(14px) saturate(200%) brightness(1.08)}
 
 /* micro-interaction: press + light */
-.press{transition:transform .5s var(--spring),filter .3s,opacity .3s;will-change:transform}
+.press{transition:transform .5s var(--spring),filter .3s,opacity .3s}
 .press:active,.press.down{transform:scale(.94);transition:transform .12s ease-out}
 .lit-burst{position:absolute;border-radius:50%;pointer-events:none;width:12px;height:12px;margin:-6px 0 0 -6px;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,0) 70%);animation:litb .6s var(--out) forwards;z-index:5}
 @keyframes litb{to{transform:scale(22);opacity:0}}

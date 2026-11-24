@@ -89,6 +89,8 @@ export const DEFAULT_SETTINGS = {
   // ---- language & format
   lang: 'en', numFormat: 'indian', decimals: 'auto',
   dockLabels: true,
+  appMode: 'scanner',        // scanner | budget (big switch at the top of Settings)
+  lastManualCat: '', lastMethod: 'cash',
 };
 
 export const DEFAULT_WIDGETS = [
@@ -129,7 +131,8 @@ export const store = {
       notifAsked: d.notifAsked || 0,  // full timeline (scans, payments, receipts, bills…)   // Widget Studio: per-design overrides for the home-screen widgets
       firstRun: d.firstRun === undefined ? true : d.firstRun,
       migr: d.migr || 0,
-      noPrefill: d.noPrefill || {},   // per UPI app: refuses pre-filled amounts to personal IDs
+      noPrefill: d.noPrefill || {},
+      catBudgets: d.catBudgets || {},  // Budget tracker: monthly limit per category   // per UPI app: refuses pre-filled amounts to personal IDs
     };
     // one-time clean-up (v2): strip the old demo data, always ask which UPI app, plain tap-to-pay
     if (this.data.migr < 2) {
@@ -269,6 +272,7 @@ export function streak() {
   return n;
 }
 
+const NF = {};   // cached number formatters (building one per call was a top cost when lists render)
 export function money(v, opts = {}) {
   const s = store.s;
   if (s.hideAmounts && !opts.force) return s.currency + '•••';
@@ -281,8 +285,9 @@ export function money(v, opts = {}) {
     const f = n >= 1e7 ? [n / 1e7, 'Cr'] : n >= 1e5 ? [n / 1e5, 'L'] : [n / 1e3, 'K'];
     return sign + s.currency + (+f[0].toFixed(f[0] >= 100 ? 0 : 1)) + f[1];
   }
-  const loc = s.numFormat === 'intl' ? 'en-US' : 'en-IN';
-  return sign + s.currency + n.toLocaleString(loc, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  const loc = s.numFormat === 'intl' ? 'en-US' : 'en-IN', fk = loc + dec;
+  const nf = NF[fk] || (NF[fk] = new Intl.NumberFormat(loc, { minimumFractionDigits: dec, maximumFractionDigits: dec }));
+  return sign + s.currency + nf.format(n);
 }
 export function compact(v) {
   if (store.s.hideAmounts) return store.s.currency + '•••';

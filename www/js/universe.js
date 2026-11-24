@@ -215,9 +215,9 @@ export class Universe {
     const mem = navigator.deviceMemory || 4;
     if (qs === 'auto') qs = cores >= 8 && mem >= 6 ? 'high' : cores >= 6 ? 'med' : 'low';
     return {
-      low: { name: 'low', dpr: Math.min(dpr, 1.35), rt: 0.5, steps: 40, k: 0.15, stars: 3000, sky: 'lo' },
-      med: { name: 'med', dpr: Math.min(dpr, 1.6), rt: 0.5, steps: 52, k: 0.12, stars: 5000, sky: 'lo' },
-      high: { name: 'high', dpr: Math.min(dpr, 2), rt: 0.6, steps: 68, k: 0.1, stars: 8000, sky: mem >= 6 ? 'hi' : 'lo' },
+      low: { name: 'low', dpr: Math.min(dpr, 1.2), rt: 0.5, steps: 40, k: 0.15, stars: 3000, sky: 'lo' },
+      med: { name: 'med', dpr: Math.min(dpr, 1.45), rt: 0.5, steps: 50, k: 0.12, stars: 5000, sky: 'lo' },
+      high: { name: 'high', dpr: Math.min(dpr, 1.75), rt: 0.55, steps: 64, k: 0.1, stars: 8000, sky: mem >= 6 ? 'hi' : 'lo' },
     }[qs];
   }
 
@@ -647,7 +647,8 @@ export class Universe {
   setFps(n) { this.fpsCap = n; }
   loop(time) {
     if (!this.running || this.paused) { this.timer.update(time); return; }
-    const cap = (this.introT !== undefined || this.state.warp > 0.02 || this.state.pulse > 0.15) ? 60 : (this.fpsCap || 60);
+    const cap = (this.introT !== undefined || this.state.warp > 0.02 || this.state.pulse > 0.15) ? 60 : (this.fpsCap == null ? 60 : this.fpsCap);
+    if (cap === 0 && this._bhOnce) { this.timer.update(time); this._lastT = time; return; }   // frozen: the last frame stays on screen, zero GPU work
     if (cap < 60 && this._lastT && time - this._lastT < 1000 / cap - 4) return;
     this._lastT = time;
     this.timer.update(time);
@@ -658,8 +659,9 @@ export class Universe {
     // adaptive quality — trade ray-march resolution first, then pixel ratio, to hold 55+ fps
     this.fpsAcc.push(dt); if (this.fpsAcc.length > 90) {
       const avg = this.fpsAcc.reduce((a, b) => a + b, 0) / this.fpsAcc.length; this.fpsAcc = [];
-      if (avg > 1 / 45 && this.adapted < 5) {
+      if (avg > 1 / 45 * (60 / Math.max(24, cap)) && this.adapted < 5) {
         this.adapted++;
+        if (this.adapted >= 2) document.documentElement.classList.add('lite');   // struggling phone: drop the remaining live blurs
         if (this.q.rt > 0.5) { this.q.rt = Math.max(0.5, this.q.rt * 0.85); this.sizeRT(); }   // floor keeps the hole crisp
         else if (R.getPixelRatio() > 1.1) { R.setPixelRatio(Math.max(1.1, R.getPixelRatio() * 0.88)); this.resize(); }
       }
@@ -778,7 +780,7 @@ export class Universe {
     // render: ray-marched black hole (reduced res) → full-res sky + composite → scene on top
     // the ray-traced hole is re-traced every other frame (the disk drifts slowly; the composite stays 60 fps)
     this.bhFrame = (this.bhFrame || 0) + 1;
-    const fast = this.introT !== undefined || S.warp > 0.02 || S.pulse > 0.2 || (this.fpsCap || 60) < 60;
+    const fast = this.introT !== undefined || S.warp > 0.02 || S.pulse > 0.2 || (this.fpsCap == null ? 60 : this.fpsCap) <= 30;
     if (this.opts.creature && (fast || this.bhFrame % 2 === 0 || !this._bhOnce)) { R.setRenderTarget(this.bhRT); R.render(this.bhScene, this.quadCam); this._bhOnce = true; }
     R.setRenderTarget(null);
     R.render(this.compScene, this.quadCam);

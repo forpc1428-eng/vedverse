@@ -134,7 +134,8 @@ export const TONES = {
 function msg(key, v = {}) {
   const pack = TONES[store.s.notifTone] || TONES.friendly;
   const list = pack.m[key] || TONES.friendly.m[key] || [['Vedverse', '']];
-  const [t, b] = rnd(list);
+  // same wording all day for a given nudge (stable, so unchanged schedules are never re-sent to Android)
+  const [t, b] = list[Math.abs(hash(key + new Date().toDateString())) % list.length];
   const s = store.s;
   const vars = { n: (s.name || '').split(' ')[0] || 'there', goal: s.goalName || 'your goal', limit: M(s.dailyBudget), ...v };
   const f = str => str.replace(/\{(\w+)\}/g, (_, k) => vars[k] != null ? vars[k] : '');
@@ -161,7 +162,16 @@ const at = (date, h, m = 0) => { const d = new Date(date); d.setHours(h, m, 0, 0
 const dayKey = t => new Date(t).toDateString();
 
 /* ================================================================== rich chart image */
+const IMG_CACHE = new Map();
 function chartImage(title, values, sub) {
+  const key = title + '|' + values.join(',') + '|' + sub + '|' + (store.s.notifColor || store.s.accent || '');
+  if (IMG_CACHE.has(key)) return IMG_CACHE.get(key);
+  const v = drawChart(title, values, sub);
+  if (IMG_CACHE.size > 6) IMG_CACHE.delete(IMG_CACHE.keys().next().value);
+  IMG_CACHE.set(key, v);
+  return v;
+}
+function drawChart(title, values, sub) {
   try {
     const W = 720, H = 360, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
     const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#05060d'); bg.addColorStop(1, '#120a1c'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
@@ -291,11 +301,15 @@ export function buildSchedule() {
   return kept.map(({ kind, prio, ...o }) => o);
 }
 
-let schedT = null;
-export function reschedule(delay = 2500) { clearTimeout(schedT); schedT = setTimeout(scheduleNow, delay); }
-export async function scheduleNow() {
+let schedT = null, lastSig = '';
+export function reschedule(delay = 2500) { clearTimeout(schedT); schedT = setTimeout(() => (window.requestIdleCallback || setTimeout)(() => scheduleNow()), delay); }
+export async function scheduleNow(force) {
   const P = X(); if (!P) return;
-  try { await P.schedule({ items: buildSchedule() }); } catch (e) { console.warn('schedule', e); }
+  const items = buildSchedule();
+  const sig = JSON.stringify(items);
+  if (!force && sig === lastSig) return;   // nothing changed: skip the native round-trip
+  lastSig = sig;
+  try { await P.schedule({ items }); } catch (e) { lastSig = ''; console.warn('schedule', e); }
 }
 
 /* ================================================================== live nudges (fire right away, respecting quiet hours + cap) */

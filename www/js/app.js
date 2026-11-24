@@ -11,6 +11,7 @@ import { openReceive, openSplit, openBills, markBillPaid, openIdentity } from '.
 import { greeting, logEvent, getLoc, timelineHTML, initAutoConfirm, onAutoPaid, scheduleReminders, biometricUnlock, onToggle, renderReceipt, openReceiptStyles, openStatement, openIncome, monthIncome, openThemeBuilder, todTheme, openTodEditor, openDockEditor, DOCK_OPTS, setLanguage, LANG_NAMES } from './extras.js';
 import { haptic, sfx, shatter, confetti, playMonth } from './fx.js';
 import { initNotify, onResume as notifResume, settingsRows as notifRows, statusRow as notifStatusRow, refreshStatus as notifRefresh, NOTIF_KEYS, onNotifSetting, openNotifStudio, allow as notifAllow, test as notifTest } from './notify.js';
+import { isBudget, budgetHomeHTML, openAddExpense, openCatBudgets, openAddSavings, modePickerHTML } from './budget.js';
 
 export const THEMES = {
   // deep, realistic palettes — `temp` is the accretion disk's inner temperature (K), yaw/pitch pick which part of the sky you see
@@ -154,7 +155,7 @@ function openSheet(html, { onMount, onClose, tall, key } = {}) {
   let closed = false;
   const unstack = pushStack(() => close());
   function close(val) {
-    if (closed) return; closed = true; wrap._closed = true; unstack();
+    if (closed) return; closed = true; wrap._closed = true; unstack(); fpsPolicy();
     sheet.classList.add('closing'); bg.classList.add('closing');
     sfx.close();
     setTimeout(() => wrap.remove(), 340);
@@ -169,6 +170,7 @@ function openSheet(html, { onMount, onClose, tall, key } = {}) {
   sheet.addEventListener('touchend', () => { if (y0 === null) return; sheet.style.transition = ''; if (dy > 110) close(); else sheet.style.transform = ''; y0 = null; });
   sfx.open(); haptic('soft');
   onMount && onMount(sheet, close);
+  fpsPolicy();
   return { el: sheet, close };
 }
 
@@ -185,12 +187,15 @@ function confirmSheet(title, sub, okLabel = 'Confirm', danger = false) {
 /* =========================================================================
    Navigation
    ========================================================================= */
-// universe frame budget: full 60 fps on Home / sky view, 30 behind card-heavy screens, sheets and while scrolling
 let scrolling = false, scrollT = 0;
+// universe frame budget. The black hole is the heaviest thing on screen, so it only works when you can see it:
+// frozen (0 fps) while a popup is open or a list is scrolling, 24 behind card screens, 30 on Pay, full speed on Home.
 function fpsPolicy() {
   if (!U) return;
   const covered = current !== 'home' && !(current === 'history' && skyMode);
-  U.setFps(scrolling || covered || document.querySelector('#sheets .sheet-wrap') ? 30 : 60);
+  const sheet = [...document.querySelectorAll('#sheets .sheet-wrap')].some(w => !w._closed);
+  const fps = sheet || scrolling ? 0 : document.querySelector('.pay') ? 30 : covered ? 24 : (U.q && U.q.name === 'high' && !U.adapted ? 60 : 40);
+  U.setFps(fps);
 }
 function go(name, opts = {}) {
   if (editing && name !== 'home') toggleEdit(false);
@@ -203,7 +208,7 @@ function go(name, opts = {}) {
   if (U) U.mode(name === 'home' ? 'home' : (name === 'history' && skyMode) ? 'sky' : 'side');
   fpsPolicy();
   if (prev !== name) { haptic('tick'); sfx.tick(); const sc = $('#s-' + name); if (sc && !opts.keepScroll) sc.scrollTop = 0; }
-  $('#editBtn').style.visibility = name === 'home' ? '' : 'hidden';
+  $('#editBtn').style.visibility = name === 'home' && !isBudget() ? '' : 'hidden';
 }
 function moveBlob() {
   const on = $('.dock-item.on'), blob = $('#dockBlob'), dock = $('#dock');
@@ -230,7 +235,16 @@ function render(name = current) {
 /* =========================================================================
    HOME
    ========================================================================= */
+// Scanner mode ↔ Budget tracker mode: the dock's centre button and Home change, everything else is shared
+function applyMode() {
+  const b = isBudget();
+  root.classList.toggle('mode-budget', b);
+  const d = $('#dockScan'); if (d) { d.innerHTML = `<span class="scan-orb">${icon(b ? 'plus' : 'scan')}</span>`; d.setAttribute('aria-label', b ? 'Add expense' : 'Scan and pay'); }
+  if (b && editing) editing = false;
+  if (current === 'home') { render('home'); $('#editBtn').style.visibility = b ? 'hidden' : ''; }
+}
 function renderHome() {
+  if (isBudget()) { $('#s-home').innerHTML = budgetHomeHTML(txRow); syncUniverse(); return; }
   const s = stats(), st = store.s;
   const pct = st.monthlyBudget ? s.month / st.monthlyBudget : 0;
   const pillCls = pct > 1 ? 'bad' : pct > 0.8 ? 'warn' : '';
@@ -356,6 +370,7 @@ function openBuilder(existingId) {
 /* =========================================================================
    HISTORY
    ========================================================================= */
+let histLimit = 80;
 function renderHistory() {
   const el = $('#s-history');
   const cats = store.data.categories;
@@ -370,6 +385,8 @@ function renderHistory() {
     if (histAdv.app && t.app !== histAdv.app) return false;
     return true;
   });
+  const more = Math.max(0, list.length - histLimit);
+  if (more) list = list.slice(0, histLimit);   // render in pages: long histories stay instant
   const groups = {};
   list.forEach(t => { const d = startOfDay(t.ts); (groups[d] = groups[d] || []).push(t); });
   const today = startOfDay();
@@ -379,7 +396,7 @@ function renderHistory() {
     const items = groups[d];
     const tot = sum(items.filter(t => t.status === 'paid'));
     return `<div class="day-h"><span>${dayLabel(+d)}</span><span class="num">${money(tot)}</span></div><div class="list glass">${items.map(t => txRow(t, i++)).join('')}</div>`;
-  }).join('');
+  }).join('') + (more ? `<button class="btn press" id="histMore" style="width:100%;margin-top:12px">Show ${Math.min(more, 120)} more</button>` : '');
   const hadSearchFocus = document.activeElement && document.activeElement.id === 'histSearch';
   el.classList.toggle('sky-mode', skyMode);
   el.innerHTML = `
@@ -393,6 +410,11 @@ function renderHistory() {
   segKnob($('#histSeg'));
   if (hadSearchFocus) { const s = $('#histSearch'); s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
   if (skyMode && U) buildSky();
+  const hm = $('#histMore');
+  if (hm) {
+    hm.onclick = () => { const y = el.scrollTop; histLimit += 120; renderHistory(); el.scrollTop = y; };
+    if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => { if (es[0].isIntersecting) { io.disconnect(); hm.click(); } }, { root: el, rootMargin: '600px' }); io.observe(hm); }
+  }
 }
 function openHistFilter() {
   const iso = ts => ts ? new Date(ts - new Date(ts).getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '';
@@ -585,6 +607,7 @@ const SETTINGS = () => [
     { k: 'goalName', t: 'text', label: 'Savings goal' },
     { k: 'goalAmount', t: 'number', label: 'Goal amount' },
     { k: 'goalSaved', t: 'number', label: 'Saved so far' },
+    { t: 'btn', label: 'Category budgets', sub: 'A monthly limit for each category', act: 'bt-cats' },
     { t: 'cats' },
   ] },
   { id: 'history', h: 'History & data', ic: 'layers', d: 'Timeline, location, PDF, backup', rows: [
@@ -658,7 +681,7 @@ function renderSettings() {
     const c = cats.find(x => x.id === setPage) || cats[0];
     el.innerHTML = `<div class="set-top"><button class="icon-btn glass press" data-setback>${icon('back')}</button><h3>${c.h}</h3></div><div class="set-list glass">${c.rows.map(row).join('')}</div>`;
   } else {
-    el.innerHTML = search + `<div class="set-cats">${cats.map(c => `<button class="set-cat glass press" data-setcat="${c.id}"><span class="set-ic">${icon(c.ic)}</span><span class="set-ct"><b>${c.h}</b><small>${c.d}</small></span>${icon('chevron', 'chev')}</button>`).join('')}
+    el.innerHTML = modePickerHTML() + search + `<div class="set-cats">${cats.map(c => `<button class="set-cat glass press" data-setcat="${c.id}"><span class="set-ic">${icon(c.ic)}</span><span class="set-ct"><b>${c.h}</b><small>${c.d}</small></span>${icon('chevron', 'chev')}</button>`).join('')}
       <button class="set-cat glass press" data-setcat="features"><span class="set-ic">${icon('spark')}</span><span class="set-ct"><b>Features</b><small>Every on/off switch in one list</small></span>${icon('chevron', 'chev')}</button></div>` +
       `<div class="about">${LOGO(56, 'ab')}<div><b style="font-family:var(--font-d);font-size:16px;color:var(--text)">Vedverse</b> · v2.0</div><div>Crafted for Vedant · Works fully offline. Payments happen in your UPI app; Vedverse never touches your money or bank details.</div></div>`;
   }
@@ -874,7 +897,7 @@ function openPay(info, opts = {}) {
     ${s.calcKeypad && !locked ? `<div class="calc-row">${['+', '−', '×', '÷', '='].map(o => `<button class="calc-k press" data-op="${o}">${o}</button>`).join('')}</div>` : ''}
     <div class="keypad">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'].map(k => `<button class="key ${locked ? 'dis' : ''}" data-key="${k}">${k === 'del' ? icon('backspace') : k}</button>`).join('')}</div>
     <button class="paybtn" id="pBtn" disabled><div class="hold"></div><span id="pBtnTxt">Enter amount</span></button>`;
-  document.body.appendChild(el);
+  document.body.appendChild(el); fpsPolicy();
   $('#app').classList.add('dim');
   if (U) U.mode('pay');
   const unstack = pushStack(() => close());
@@ -987,7 +1010,7 @@ function openPay(info, opts = {}) {
   let closed = false;
   function close(silent) {
     if (closed) return; closed = true; unstack();
-    el.classList.add('closing'); setTimeout(() => el.remove(), 380);
+    el.classList.add('closing'); setTimeout(() => { el.remove(); fpsPolicy(); }, 380);
     $('#app').classList.remove('dim');
     if (U) { U.setWarp(0); U.mode(current === 'home' ? 'home' : 'side'); }
     if (!silent) sfx.close();
@@ -1323,6 +1346,11 @@ async function act(a, el) {
     case 'receive': return openReceive({ openSheet, toast, haptic });
     case 'split': return openSplit({ openSheet, toast, haptic });
     case 'bills': return openBills({ openSheet, toast, haptic, openPay });
+    case 'bt-add': return openAddExpense({ openSheet, toast, haptic, onChange: () => { render(); syncUniverse(); } });
+    case 'bt-income': return openIncome({ openSheet, toast, haptic, onChange: () => { render(); syncUniverse(); } });
+    case 'bt-cats': return openCatBudgets({ openSheet, toast, haptic, onChange: () => render() });
+    case 'bt-save': return openAddSavings({ openSheet, toast, haptic, onChange: () => render() });
+    case 'mode-scanner': case 'mode-budget': { const m = k === 'mode-budget' ? 'budget' : 'scanner'; if (store.s.appMode === m) return; store.s.appMode = m; store.save(); applyMode(); haptic('success'); sfx.success(60, 'fun'); renderSettings(); toast(m === 'budget' ? 'Budget tracker mode: Home is now your budget' : 'Scanner mode: scan & pay first', m === 'budget' ? 'wallet' : 'scan', 2600); return; }
     case 'nstudio': return openNotifStudio();
     case 'notif-allow': return notifAllow();
     case 'notif-settings': { const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.VedExtras; if (P) P.openNotifSettings(); else toast('Works in the Android app', 'info'); return; }
@@ -1368,9 +1396,10 @@ async function act(a, el) {
 function bindGlobal() {
   // dock
   $$('.dock-item').forEach(b => b.onclick = () => { if (b.dataset.go) go(b.dataset.go); else if (b.dataset.dact) act(b.dataset.dact); });
-  $('#dockScan').innerHTML = `<span class="scan-orb">${icon('scan')}</span>`;
+  $('#dockScan').innerHTML = `<span class="scan-orb">${icon(isBudget() ? 'plus' : 'scan')}</span>`;
+  root.classList.toggle('mode-budget', isBudget());
   applyDock();
-  $('#dockScan').onclick = () => openScanner();
+  $('#dockScan').onclick = () => isBudget() ? act('bt-add') : openScanner();
   $('#privacyBtn').onclick = () => { store.s.hideAmounts = !store.s.hideAmounts; store.save(); applyAppearance(); render(); haptic('tap'); toast(store.s.hideAmounts ? 'Amounts hidden' : 'Amounts visible', store.s.hideAmounts ? 'eyeOff' : 'eye', 1400); };
   $('#editBtn').innerHTML = icon('grid');
   $('#editBtn').onclick = () => toggleEdit();
@@ -1429,7 +1458,7 @@ function bindGlobal() {
     window.__vv_scanEngine = store.s.scanEngine; Scanner.prepare();
     clearTimeout(warmT); warmT = setTimeout(() => { if ($('#scanner').hidden) Scanner.cancelPrepare(); }, 3000);
   };
-  document.addEventListener('pointerdown', e => { if (e.target.closest('#dockScan,[data-act^="scan"]')) warmScan(); }, { passive: true, capture: true });
+  document.addEventListener('pointerdown', e => { if (e.target.closest('[data-act^="scan"]') || (!isBudget() && e.target.closest('#dockScan'))) warmScan(); }, { passive: true, capture: true });
 
   // delegated clicks
   document.addEventListener('click', e => {
@@ -1437,7 +1466,7 @@ function bindGlobal() {
     const wx = e.target.closest('[data-wx]'); if (wx) { store.data.widgets = store.data.widgets.filter(w => w.id !== wx.dataset.wx); store.save(); haptic('tap'); renderHome(); return; }
     const we = e.target.closest('[data-we]'); if (we) { openBuilder(we.dataset.we); return; }
     const tx = e.target.closest('[data-tx]'); if (tx) { openTx(tx.dataset.tx); return; }
-    const hf = e.target.closest('[data-hf]'); if (hf) { histFilter = hf.dataset.hf; haptic('tick'); renderHistory(); return; }
+    const hf = e.target.closest('[data-hf]'); if (hf) { histFilter = hf.dataset.hf; histLimit = 80; haptic('tick'); renderHistory(); return; }
     const sk = e.target.closest('[data-sky]'); if (sk) { histView = sk.dataset.sky === '2' ? 'timeline' : 'list'; skyMode = sk.dataset.sky === '1'; haptic('tap'); if (U) U.mode(skyMode ? 'sky' : 'side'); renderHistory(); if (skyMode && !U) toast('Turn on the 3D universe in Settings to see your sky', 'cube'); return; }
     const sp = e.target.closest('[data-sp]'); if (sp) { statPeriod = sp.dataset.sp; haptic('tick'); renderStats(); return; }
     const th = e.target.closest('[data-theme]'); if (th) { store.s.theme = th.dataset.theme; store.save(); applyAppearance(); renderSettings(); haptic('success'); if (U) U.supernova(); return; }
@@ -1472,7 +1501,7 @@ function bindGlobal() {
   });
   document.addEventListener('input', e => {
     const t = e.target;
-    if (t.id === 'histSearch') { histQuery = t.value; clearTimeout(t._d); t._d = setTimeout(renderHistory, 160); return; }
+    if (t.id === 'histSearch') { histQuery = t.value; histLimit = 80; clearTimeout(t._d); t._d = setTimeout(renderHistory, 160); return; }
     if (t.id === 'setSearch') { setQuery = t.value; clearTimeout(t._d); t._d = setTimeout(renderSettings, 140); return; }
     if (t.dataset && t.dataset.color) { store.s[t.dataset.color] = t.value; store.save(); applyAppearance(); return; }
     if (t.dataset.sl) { const k = t.dataset.sl; store.s[k] = +t.value; t.style.setProperty('--p', ((t.value - t.min) / (t.max - t.min) * 100) + '%'); $('#val-' + k).textContent = t.value + t.dataset.unit; if (!t.dataset.reload) applyAppearance(); store.save(); return; }
