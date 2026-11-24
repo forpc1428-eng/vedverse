@@ -189,12 +189,13 @@ html.lite .press{will-change:auto}
 .bt-cat-top span{flex:none}
 .bt-cat-top b{min-width:0}
 /* ---------- Smooth black hole (pre-rendered video) ---------- */
-.bhv{position:fixed;inset:-3%;width:106%;height:106%;object-fit:cover;object-position:50% 0;z-index:0;pointer-events:none;background:#020307;
+.bhv{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 28%;opacity:0;z-index:0;pointer-events:none;background:#020307;
   transform:translate3d(var(--bh-x,0),var(--bh-y,0),0) scale(var(--bh-s,1));transform-origin:50% 22%;transition:transform 1.1s cubic-bezier(.2,.8,.2,1),opacity .8s ease,filter .8s ease}
 .bhv.bh-filt{filter:var(--bh-f)}
-.bhv[data-mode="side"]{opacity:.7}
+.bhv.on{opacity:1}
+.bhv.on[data-mode="side"]{opacity:.7}
 .bhv[data-mode="pay"]{transform:translate3d(var(--bh-x,0),calc(var(--bh-y,0) + 2%),0) scale(calc(var(--bh-s,1) * 1.06))}
-.bhv[data-mode="receipt"]{opacity:.85}
+.bhv.on[data-mode="receipt"]{opacity:.85}
 .bhv.bh-warp{transform:scale(calc(var(--bh-s,1) * 1.12));transition:transform .5s ease-in}
 .bhv.bh-pulse{animation:bhPulse .9s ease-out}
 @keyframes bhPulse{30%{filter:brightness(1.35) saturate(1.2)}}
@@ -202,4 +203,4 @@ html.lite .press{will-change:auto}
 @keyframes bhIntro{from{transform:scale(1.6);opacity:0}to{transform:scale(var(--bh-s,1));opacity:1}}
 .bh-nova{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at 50% 22%,rgba(255,240,210,.85),rgba(242,161,68,.25) 30%,transparent 60%);animation:bhNova 1.2s ease-out forwards}
 @keyframes bhNova{from{opacity:0}15%{opacity:1}to{opacity:0}}
-html.vid #poster{background-image:url(../assets/space/blackhole-poster.jpg)}
+html.vid #poster{background-image:url(../assets/space/bh/nebula.jpg)}
